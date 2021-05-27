@@ -1,0 +1,80 @@
+{
+    "game": {
+        "id": "b9611d64-d7da-4713-ac6a-5fadaca7df7d",
+        "ruleset": {
+            "name": "solo",
+            "version": "v1.0.17"
+        },
+        "timeout": 500
+    },
+    "turn": 2,
+    "board": {
+        "height": 11,
+        "width": 11,
+        "snakes": [
+            {
+                "id": "gs_B8CSpxhpMGJbrYjkPHgF8PSS",
+                "name": "Drake",
+                "latency": "221",
+                "health": 98,
+                "body": [
+                    {
+                        "x": 2,
+                        "y": 10
+                    },
+                    {
+                        "x": 1,
+                        "y": 10
+                    },
+                    {
+                        "x": 1,
+                        "y": 9
+                    }
+                ],
+                "head": {
+                    "x": 2,
+                    "y": 10
+                },
+                "length": 3,
+                "shout": ""
+            }
+        ],
+        "food": [
+            {
+                "x": 0,
+                "y": 8
+            },
+            {
+                "x": 5,
+                "y": 5
+            }
+        ],
+        "hazards": []
+    },
+    "you": {
+        "id": "gs_B8CSpxhpMGJbrYjkPHgF8PSS",
+        "name": "Drake",
+        "latency": "221",
+        "health": 98,
+        "body": [
+            {
+                "x": 2,
+                "y": 10
+            },
+            {
+                "x": 1,
+                "y": 10
+            },
+            {
+                "x": 1,
+                "y": 9
+            }
+        ],
+        "head": {
+            "x": 2,
+            "y": 10
+        },
+        "length": 3,
+        "shout": "}], "
+    }
+}
