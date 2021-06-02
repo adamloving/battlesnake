@@ -32,6 +32,7 @@ class SnakeBrain(object):
                 move = direction
                 next_position = position
 
+        # note: if there's no good moves, will default to last one considered
         if self.is_on_board(board["width"], next_position):
             print("Move: " + move)
             return move
@@ -57,13 +58,14 @@ class SnakeBrain(object):
       board = self.get_weighted_board(data)
       return board[position["x"]][position["y"]] == 0.0 # todo - allow "maybe spots"
 
-    # need to consider where others might move
+    # todo: distance to food, don't like corners
     def get_weighted_board(self, data):
       dimension = data["board"]["width"]
       board = [[0.5 for x in range(dimension)] for y in range(dimension)]
 
       # occupied spots
       for snake in data["board"]["snakes"]:
+        # todo: how to account for fact that tail is leaving?
         for body_position in snake["body"]:
           board[body_position["x"]][body_position["y"]] = 0.0
 
@@ -85,6 +87,7 @@ class SnakeBrain(object):
           current_weight = board[food["x"]][food["y"]]
           if current_weight > 0:
               board[food["x"]][food["y"]] = min(1, current_weight + 0.1)
+
 
       print(f"board: {board}")
       return board
