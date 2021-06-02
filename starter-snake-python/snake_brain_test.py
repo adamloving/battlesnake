@@ -11,13 +11,13 @@ class SnakeBrainTest(unittest.TestCase):
             self.data = json.load(f)
 
     # does it at least do something?
-    def xtest_move(self):
+    def test_move(self):
         snake = SnakeBrain()
         move = snake.get_move(self.data)
         self.assertIn(move, ["left", "right", "up", "down"])
 
     # should stay on board (or return None) no matter what the size of it
-    def xtest_stays_on_board(self):
+    def test_stays_on_board(self):
         dimension = random.randrange(5, 100) # random square board size
         self.data["board"]["height"] = dimension
         self.data["board"]["width"] = dimension
@@ -39,7 +39,7 @@ class SnakeBrainTest(unittest.TestCase):
             self.assertLess(next_position["x"], dimension)
             self.assertLess(next_position["y"], dimension)
 
-    def xtest_avoids_self_collision(self):
+    def test_avoids_self_collision(self):
         # a box where only way is is right
         self.data["you"]["body"] = [
             {"x": 0, "y": 0},
@@ -57,11 +57,15 @@ class SnakeBrainTest(unittest.TestCase):
         move = snake.get_move(self.data)
         self.assertEqual(move, "right")
 
-    def xtest_get_uncontested_spots(self):
+    def test_get_weighted_board(self):
         snake = SnakeBrain()
-        spots = snake.get_uncontested_spots(self.data)
+        spots = snake.get_weighted_board(self.data)
+        # open
+        self.assertEqual(0.5, spots[0][0])
+        # my body
         self.assertEqual(0.0, spots[1][9])
-        self.assertEqual(0.0, spots[1][10])
+        # food
+        self.assertEqual(0.6, spots[0][8])
 
     def test_avoids_direct_collision(self):
         # head to head
@@ -81,7 +85,7 @@ class SnakeBrainTest(unittest.TestCase):
         move = snake.get_move(self.data)
         self.assertEqual(move, "up")
 
-    def xtest_avoids_potential_collision(self):
+    def test_avoids_potential_collision(self):
         # head to head
         self.data["you"]["body"] = [
             {"x": 0, "y": 0},

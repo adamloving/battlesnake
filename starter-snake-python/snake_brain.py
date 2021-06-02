@@ -18,16 +18,17 @@ class SnakeBrain(object):
             "x": round(board["width"] / 2),
             "y": round(board["height"] / 2)
         }
-        min_dist_to_center = 9999999
+        max_score = 0
+        weighted_board = self.get_weighted_board(data)
 
         # which way can I go?
         for direction in directions:
             position = self.get_next_position(head_position, direction)
-            dist_to_center = self.get_distance(center, position)
-            if self.is_on_board(board["width"], position) and \
-                self.is_uncontested(data, position) and \
-                dist_to_center < min_dist_to_center:
-                min_dist_to_center = dist_to_center
+            if not self.is_on_board(board["width"], position):
+                continue
+            score = weighted_board[position["x"]][position["y"]]
+            if score > max_score:
+                max_score = score
                 move = direction
                 next_position = position
 
@@ -53,13 +54,13 @@ class SnakeBrain(object):
       return False
 
     def is_uncontested(self, data, position):
-      board = self.get_uncontested_spots(data)
-      return board[position["x"]][position["y"]] > 0.5 # todo - allow "maybe spots"
+      board = self.get_weighted_board(data)
+      return board[position["x"]][position["y"]] == 0.0 # todo - allow "maybe spots"
 
     # need to consider where others might move
-    def get_uncontested_spots(self, data):
+    def get_weighted_board(self, data):
       dimension = data["board"]["width"]
-      board = [[1.0 for x in range(dimension)] for y in range(dimension)]
+      board = [[0.5 for x in range(dimension)] for y in range(dimension)]
 
       # occupied spots
       for snake in data["board"]["snakes"]:
@@ -75,10 +76,17 @@ class SnakeBrain(object):
           next_position = self.get_next_position(head_position, direction)
           if next_position["x"] >=0 and next_position["x"] < dimension and \
             next_position["y"] >= 0 and next_position["y"] < dimension:
-            board[next_position["x"]][next_position["y"]] = \
-                board[next_position["x"]][next_position["y"]] - 0.5
+            current_weight = board[next_position["x"]][next_position["y"]]
+            board[next_position["x"]][next_position["y"]] = max(0, current_weight - 0.25)
 
-      print(f"uncontested {board}")
+      # add points for food
+      for food in data["board"]["food"]:
+          # todo: increment scores around it too
+          current_weight = board[food["x"]][food["y"]]
+          if current_weight > 0:
+              board[food["x"]][food["y"]] = min(1, current_weight + 0.1)
+
+      print(f"board: {board}")
       return board
 
     # note: no bounds check
