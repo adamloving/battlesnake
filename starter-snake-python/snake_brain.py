@@ -1,4 +1,7 @@
 import random
+from collections import namedtuple
+
+Point = namedtuple("Point", ("x", "y"))
 
 class SnakeBrain(object):
 
@@ -18,8 +21,10 @@ class SnakeBrain(object):
             "x": round(board["width"] / 2),
             "y": round(board["height"] / 2)
         }
-        max_score = 0
+        max_score = -9999999
         weighted_board = self.get_weighted_board(data)
+
+        self.print_weighted_board(weighted_board)
 
         # which way can I go?
         for direction in directions:
@@ -68,6 +73,7 @@ class SnakeBrain(object):
         # todo: how to account for fact that tail is leaving?
         for body_position in snake["body"]:
           board[body_position["x"]][body_position["y"]] = 0.0
+          board = self.draw_overlay(board, body_position, 3, -0.1)
 
       # all potential occupied next head spots (except my own)
       for snake in data["board"]["snakes"]:
@@ -80,6 +86,7 @@ class SnakeBrain(object):
             next_position["y"] >= 0 and next_position["y"] < dimension:
             current_weight = board[next_position["x"]][next_position["y"]]
             board[next_position["x"]][next_position["y"]] = max(0, current_weight - 0.25)
+            board = self.draw_overlay(board, next_position, 3, -0.1)
 
       # add points for food
       for food in data["board"]["food"]:
@@ -87,9 +94,9 @@ class SnakeBrain(object):
           current_weight = board[food["x"]][food["y"]]
           if current_weight > 0:
               board[food["x"]][food["y"]] = min(1, current_weight + 0.1)
+              board = self.draw_overlay(board, food, 3, 0.1)
 
-
-      print(f"board: {board}")
+      # print(f"board: {board}")
       return board
 
     # note: no bounds check
@@ -108,3 +115,59 @@ class SnakeBrain(object):
 
     def get_distance(self, a, b):
         return abs(a["x"] - b["x"]) + abs(a["y"] - b["y"])
+
+    def print_weighted_board(self, board):
+        print("")
+        max = len(board[0])
+        for y in reversed(range(max)):
+            print(" | ", end='')
+            for x in range(max):
+                # print(f"{x},{y}|", end='')
+                print(str(board[x][y]).center(5), end='')
+                print(" | ", end='')
+            print("")
+        print("")
+
+    def print_board(self, data):
+        size = data["board"]["width"]
+
+        # initialize a list of lists
+        matrix = [[" " for x in range(size)] for y in range(size)]
+
+        print(f"{data['board']['snakes']}")
+
+        # mark where the snakes are
+        snake_number = 0
+        for snake in data["board"]["snakes"]:
+            for body_position in snake["body"]:
+                matrix[body_position["x"]][body_position["y"]] = str(snake_number)
+            snake_number += 1
+
+        # todo: mark food and hazards
+
+        # print it out
+        print("")
+        for y in reversed(range(size)):
+            print(" | ", end='')
+            for x in range(size):
+                print(matrix[x][y].center(5), end='')
+                print(" | ", end='')
+            print("")
+        print("")
+
+        return matrix
+
+    def draw_overlay(self, matrix, position, radius, delta):
+        size = len(matrix[0])
+        p = Point(*position.values())
+        for x in range(p.x - radius, p.x + radius + 1):
+            if x < 0 or x > size - 1: continue
+            for y in range(p.y - radius, p.y + radius + 1):
+                if y < 0 or y > size - 1: continue
+                distance = abs(p.x - x) + abs(p.y - y)
+                # todo decay with square of distance
+                if distance == 0: d = delta
+                else: d = (1/distance) * delta
+                matrix[x][y] = round(matrix[x][y] + d, 2)
+        return matrix
+

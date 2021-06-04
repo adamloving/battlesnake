@@ -18,26 +18,30 @@ class SnakeBrainTest(unittest.TestCase):
 
     # should stay on board (or return None) no matter what the size of it
     def test_stays_on_board(self):
-        dimension = random.randrange(5, 100) # random square board size
-        self.data["board"]["height"] = dimension
-        self.data["board"]["width"] = dimension
+        for size in range(7, 19):
+          for x in range(0, size):
+            for y in range(0, size):
+              self.data["board"]["height"] = size
+              self.data["board"]["width"] = size
+              head_position = {"x": x, "y": y }
+              self.data["you"]["head"] = head_position
+              self.data["you"]["body"] = [head_position]
+              self.data["you"]["length"] = 1
+              self.data["board"]["snakes"] = [ self.data["you"] ]
+              self.data["board"]["food"] = []
 
-        snake = SnakeBrain()
-        move = snake.get_move(self.data)
+              snake = SnakeBrain()
+              move = snake.get_move(self.data)
 
-        head_position = {
-            "x": self.data["you"]["head"]["x"],
-            "y": self.data["you"]["head"]["y"]
-        }
-        next_position = snake.get_next_position(head_position, move)
+              self.assertIn(move, ["left", "right", "up", "down"])
 
-        if next_position is None:
-            print("need more specific test")
-        else:
-            self.assertGreaterEqual(next_position["x"], 0)
-            self.assertGreaterEqual(next_position["y"], 0)
-            self.assertLess(next_position["x"], dimension)
-            self.assertLess(next_position["y"], dimension)
+              next_position = snake.get_next_position(head_position, move)
+
+              message = f"Board size {size}. Position {x},{y}. move = {move}"
+              self.assertGreaterEqual(next_position["x"], 0, message)
+              self.assertGreaterEqual(next_position["y"], 0, message)
+              self.assertLess(next_position["x"], size, message)
+              self.assertLess(next_position["y"], size, message)
 
     def test_avoids_self_collision(self):
         # a box where only way is is right
@@ -57,7 +61,7 @@ class SnakeBrainTest(unittest.TestCase):
         move = snake.get_move(self.data)
         self.assertEqual(move, "right")
 
-    def test_get_weighted_board(self):
+    def xtest_get_weighted_board(self):
         snake = SnakeBrain()
         spots = snake.get_weighted_board(self.data)
         # open
@@ -121,7 +125,33 @@ class SnakeBrainTest(unittest.TestCase):
         move = snake.get_move(self.data)
         self.assertIn(move, ["left", "up", "down"])
 
+    # python snake_brain_test.py SnakeBrainTest.test_prints_board
+    def test_prints_weighted_board(self):
+        snake = SnakeBrain()
+        board = snake.get_weighted_board(self.data)
+        snake.print_weighted_board(board)
 
+    def test_prints_board(self):
+        self.data["board"]["snakes"].append({
+            "head": { "x": 7, "y": 5 },
+            "body": [{ "x": 7, "y": 5 }, {"x": 6, "y": 5 }]
+        })
+        self.data["board"]["hazards"].append({
+            "x": 3, "y": 3
+        })
+        snake = SnakeBrain()
+        matrix = snake.print_board(self.data)
+
+        self.assertEqual(matrix[7][5], "1")
+        # self.assertEqual(matrix[0][8], "F")
+        # self.assertEqual(matrix[5][5], "F")
+        # self.assertEqual(matrix[3][3], "H")
+
+    def test_draw_overlay(self):
+        snake = SnakeBrain()
+        matrix = [[0.5 for x in range(10)] for y in range(10)]
+        matrix = snake.draw_overlay(matrix, {"x": 5, "y": 5 }, 3, 0.1)
+        snake.print_weighted_board(matrix)
 
 if __name__ == '__main__':
     unittest.main()
