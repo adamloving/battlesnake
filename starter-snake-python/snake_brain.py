@@ -1,4 +1,5 @@
 import random
+from colr import color
 from collections import namedtuple
 
 Point = namedtuple("Point", ("x", "y"))
@@ -14,13 +15,8 @@ class SnakeBrain(object):
         }
         directions = ["up", "down", "left", "right"]
         random.shuffle(directions)
-        move = directions[0] # random default move
-        next_position = self.get_next_position(head_position, move)
-
-        center = {
-            "x": round(board["width"] / 2),
-            "y": round(board["height"] / 2)
-        }
+        move = None
+        next_position = None
         max_score = -9999999
         weighted_board = self.get_weighted_board(data)
 
@@ -31,19 +27,17 @@ class SnakeBrain(object):
             position = self.get_next_position(head_position, direction)
             if not self.is_on_board(board["width"], position):
                 continue
+            if move is None:
+                move = direction
             score = weighted_board[position["x"]][position["y"]]
+            print(f"At {head_position} Considering {direction} {score} ")
             if score > max_score:
                 max_score = score
                 move = direction
-                next_position = position
 
-        # note: if there's no good moves, will default to last one considered
-        if self.is_on_board(board["width"], next_position):
-            print("Move: " + move)
-            return move
-        else:
-            print("Move: None")
-            return None
+        # note: if there's no possible moves, returns None
+        print("Move: " + move)
+        return move
 
     def is_on_board(self, size, position):
         return position["x"] >= 0 and \
@@ -65,8 +59,8 @@ class SnakeBrain(object):
 
     # todo: distance to food, don't like corners
     def get_weighted_board(self, data):
-      dimension = data["board"]["width"]
-      board = [[0.5 for x in range(dimension)] for y in range(dimension)]
+      size = data["board"]["width"]
+      board = [[0.5 for x in range(size)] for y in range(size)]
 
       # occupied spots
       for snake in data["board"]["snakes"]:
@@ -82,19 +76,36 @@ class SnakeBrain(object):
         head_position = snake["head"]
         for direction in ["up", "down", "left", "right"]:
           next_position = self.get_next_position(head_position, direction)
-          if next_position["x"] >=0 and next_position["x"] < dimension and \
-            next_position["y"] >= 0 and next_position["y"] < dimension:
+          if next_position["x"] >=0 and next_position["x"] < size and \
+            next_position["y"] >= 0 and next_position["y"] < size:
             current_weight = board[next_position["x"]][next_position["y"]]
             board[next_position["x"]][next_position["y"]] = max(0, current_weight - 0.25)
             board = self.draw_overlay(board, next_position, 3, -0.1)
 
-      # add points for food
+      # add points for food (avoid if not hungry)
+      # todo: make food more important if there is not much
+      hungriness = (50 - data["you"]["health"]) / 100
+      delta = (hungriness * 0.2)
       for food in data["board"]["food"]:
           # todo: increment scores around it too
           current_weight = board[food["x"]][food["y"]]
           if current_weight > 0:
-              board[food["x"]][food["y"]] = min(1, current_weight + 0.1)
-              board = self.draw_overlay(board, food, 3, 0.1)
+              board[food["x"]][food["y"]] = max(0.1, min(0.9, current_weight + delta))
+              board = self.draw_overlay(board, food, 5, delta)
+
+      # avoid sides and corners (less room to move)
+    #   for x in (0, size):
+    #     for y in range(size):
+    #         board = self.draw_overlay(board, { "x": x, "y": y }, 3, -0.05)
+    #   for y in (0, size):
+    #     for x in range(size):
+    #         board = self.draw_overlay(board, { "x": x, "y": y }, 3, -0.05)
+
+      # prefer the center
+      self.draw_overlay(board, {
+          "x": round(size/2),
+          "y": round(size/2)
+      }, size - 1, + 0.15)
 
       # print(f"board: {board}")
       return board
@@ -118,13 +129,21 @@ class SnakeBrain(object):
 
     def print_weighted_board(self, board):
         print("")
-        max = len(board[0])
-        for y in reversed(range(max)):
-            print(" | ", end='')
-            for x in range(max):
-                # print(f"{x},{y}|", end='')
-                print(str(board[x][y]).center(5), end='')
-                print(" | ", end='')
+        size = len(board[0])
+        for y in reversed(range(size)):
+            for x in range(size):
+                value = max(0.0, round(board[x][y], 2))
+                text = str(value).center(5)
+                # for x in range(232, 255): print(color(str(x), fore=255, back=x))
+                background_color = round(
+                    232 + round(value * (255-232))
+                )
+                output = color(
+                    text,
+                    fore=255,
+                    back=background_color
+                )
+                print(output, end='')
             print("")
         print("")
 
@@ -157,17 +176,24 @@ class SnakeBrain(object):
 
         return matrix
 
+    # overlay can never result in 0
     def draw_overlay(self, matrix, position, radius, delta):
         size = len(matrix[0])
         p = Point(*position.values())
         for x in range(p.x - radius, p.x + radius + 1):
             if x < 0 or x > size - 1: continue
+            if x == p.x: continue
             for y in range(p.y - radius, p.y + radius + 1):
                 if y < 0 or y > size - 1: continue
+                if y == p.y: continue
+                if matrix[x][y] == 0: continue
+                if matrix[x][y] == 1: continue
                 distance = abs(p.x - x) + abs(p.y - y)
                 # todo decay with square of distance
                 if distance == 0: d = delta
                 else: d = (1/distance) * delta
-                matrix[x][y] = round(matrix[x][y] + d, 2)
+                new_value = round(matrix[x][y] + d, 2)
+                matrix[x][y] = min(0.99, max(0.01, new_value))
+
         return matrix
 
