@@ -10,6 +10,25 @@ class SnakeBrainTest(unittest.TestCase):
         with open('fixtures/example_turn.json') as f:
             self.data = json.load(f)
 
+    def test_food_scoring(self):
+        snake = SnakeBrain()
+
+        # If I'm healthy, food doesn't matter (score == 0)
+        self.assertEqual(snake.get_food_score(100, 5), 0)
+
+        # If I'm starving, food is important (score == 1)
+        self.assertGreaterEqual(snake.get_food_score(1, 1), .95)
+
+        # If I'm fine, and food is a little away from me, food is only a little important
+        self.assertLessEqual(snake.get_food_score(40, 5), 0.1)
+
+        # I'm kindof hungry, and food sort of nearby, so important
+        self.assertGreaterEqual(snake.get_food_score(20, 3), 0.1)
+
+        # I'm starving, and food sort of nearby, so very important
+        self.assertGreaterEqual(snake.get_food_score(10, 3), 0.20)
+
+
     # does it at least do something?
     def test_move(self):
         snake = SnakeBrain()
@@ -125,12 +144,6 @@ class SnakeBrainTest(unittest.TestCase):
         move = snake.get_move(self.data)
         self.assertIn(move, ["left", "up", "down"])
 
-    # python snake_brain_test.py SnakeBrainTest.test_prints_board
-    def test_prints_weighted_board(self):
-        snake = SnakeBrain()
-        board = snake.get_weighted_board(self.data)
-        snake.print_weighted_board(board)
-
     def test_prints_board(self):
         self.data["board"]["snakes"].append({
             "head": { "x": 7, "y": 5 },
@@ -143,15 +156,15 @@ class SnakeBrainTest(unittest.TestCase):
         matrix = snake.print_board(self.data)
 
         self.assertEqual(matrix[7][5], "1")
-        # self.assertEqual(matrix[0][8], "F")
-        # self.assertEqual(matrix[5][5], "F")
-        # self.assertEqual(matrix[3][3], "H")
+        self.assertEqual(matrix[0][8], "F")
+        self.assertEqual(matrix[5][5], "F")
+        self.assertEqual(matrix[3][3], "H")
 
-    def test_draw_overlay(self):
+    def test_seeks_food(self):
         snake = SnakeBrain()
-        matrix = [[0.5 for x in range(10)] for y in range(10)]
-        matrix = snake.draw_overlay(matrix, {"x": 5, "y": 5 }, 3, 0.1)
-        snake.print_weighted_board(matrix)
+        snake.print_board(self.data)
+        move = snake.get_move(self.data)
+        self.assertEqual(move, "down")
 
 if __name__ == '__main__':
     unittest.main()
