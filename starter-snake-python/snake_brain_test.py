@@ -4,11 +4,31 @@ import random
 
 from snake_brain import SnakeBrain
 
+# to run in console me use: python snake_brain_test.py
 class SnakeBrainTest(unittest.TestCase):
 
     def setUp(self):
         with open('fixtures/example_turn.json') as f:
             self.data = json.load(f)
+
+    def test_hunt_scoring(self):
+        snake = SnakeBrain()
+
+        # full health? always hunt regardless of distance
+        self.assertEqual(snake.get_hunting_score(100, 1), 1)
+        self.assertGreater(snake.get_hunting_score(100, 5), .5)
+        self.assertGreaterEqual(snake.get_hunting_score(100, 10), .1)
+
+        # half health and close? hunt!
+        self.assertEqual(snake.get_hunting_score(50, 1), 0.5)
+
+        # half health and far away? probably not
+        self.assertGreaterEqual(snake.get_hunting_score(50, 10), 0.05)
+
+        # low health? don't hunt unless close
+        self.assertGreaterEqual(snake.get_hunting_score(25, 10), 0.025)
+        self.assertEqual(snake.get_hunting_score(25, 1), 0.25)
+
 
     def test_food_scoring(self):
         snake = SnakeBrain()
@@ -35,7 +55,7 @@ class SnakeBrainTest(unittest.TestCase):
         move = snake.get_move(self.data)
         self.assertIn(move, ["left", "right", "up", "down"])
 
-    # should stay on board (or return None) no matter what the size of it
+    # should stay on board no matter what size it is
     def test_stays_on_board(self):
         for size in range(7, 19):
           for x in range(0, size):
@@ -79,16 +99,6 @@ class SnakeBrainTest(unittest.TestCase):
         snake = SnakeBrain()
         move = snake.get_move(self.data)
         self.assertEqual(move, "right")
-
-    def xtest_get_weighted_board(self):
-        snake = SnakeBrain()
-        spots = snake.get_weighted_board(self.data)
-        # open
-        self.assertEqual(0.5, spots[0][0])
-        # my body
-        self.assertEqual(0.0, spots[1][9])
-        # food
-        self.assertEqual(0.6, spots[0][8])
 
     def test_avoids_direct_collision(self):
         # head to head
@@ -162,9 +172,23 @@ class SnakeBrainTest(unittest.TestCase):
 
     def test_seeks_food(self):
         snake = SnakeBrain()
-        snake.print_board(self.data)
+        # snake.print_board(self.data)
         move = snake.get_move(self.data)
         self.assertEqual(move, "down")
+
+    def test_hunts_short_snake(self):
+        snake = SnakeBrain()
+
+        # shorter snake right in front of me!
+        self.data["board"]["snakes"].append({
+            "id": "shorty",
+            "body": [{ "x": 5, "y": 10 }],
+            "head": { "x": 5, "y": 10 }
+        })
+        snake.print_board(self.data)
+        move = snake.get_move(self.data)
+        self.assertEqual(move, "right")
+
 
 if __name__ == '__main__':
     unittest.main()

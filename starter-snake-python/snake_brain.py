@@ -21,7 +21,9 @@ class SnakeBrain(object):
 
       # print(f"Valid choices: {len(valid_choices)} {valid_choices}")
 
+      # (valid_choices and scored_choices are the same list)
       scored_choices = self.score_choices_based_on_food(data, valid_choices)
+      scored_choices = self.score_choices_based_on_hunting(data, scored_choices)
       # todo: score_based_on_next_head_positions(data["snakes"], valid_choices)
       # todo: score_choices_based_on_hazards
 
@@ -62,6 +64,45 @@ class SnakeBrain(object):
 
       return choices
 
+    def score_choices_based_on_hunting(self, data, choices):
+      my_id = data["you"]["id"]
+      my_length = len(data["you"]["body"])
+      health = data["you"]["health"]
+      size = data["board"]["width"]
+
+      for choice in choices:
+        # opponent_possible_head_position
+        choice["closest_ophp_distance"] = 9999999999
+        choice["closest_opponent_size"] = None
+        for snake in data["board"]["snakes"]:
+          if snake["id"] == my_id:
+            continue
+          opponent_head_position = snake["head"]
+          for direction in ["up", "down", "left", "right"]:
+            ophp = self.get_next_position(opponent_head_position, direction)
+            if self.is_on_board(ophp, size) and \
+              self.is_open(ophp, data["board"]["snakes"]):
+              distance = self.get_distance(choice["position"], ophp)
+              length = len(snake["body"])
+              print(f"ophp: {ophp} {distance}")
+              if distance < choice["closest_ophp_distance"]:
+                print(f"found: {distance} {length}")
+                choice["closest_ophp_distance"] = distance
+                choice["closest_opponent_size"] = length
+
+      print(f"{choices}")
+      for choice in choices:
+        if choice["closest_opponent_size"] is None:
+          continue
+        print(f"get_hunting_score for {choice['position']} {format(choice['score'], 'f')}")
+        choice["score"] = (choice["score"] + self.get_hunting_score(
+          health,
+          choice["closest_ophp_distance"],
+          choice["closest_opponent_size"] < my_length
+        ))/2
+
+      return choices
+
     # returns 1 if should go towards food, 0 if should ignore
     def get_food_score(self, health, distance):
         if health == 0: return 0 # avoid divide by 0
@@ -73,8 +114,27 @@ class SnakeBrain(object):
         # close = 1, far = 0
         proximity = 1 / distance
 
-        # print(f"h={health} d={distance} i={importance} p={proximity} s={importance*proximity}")
+        print(f"eat? h={health} d={distance} i={importance} p={proximity} s={round(importance*proximity, 10)}")
         return importance * proximity
+
+    # distance input should be distance to nearest _potential_ next head
+    # (otherwise use score = 1)
+    def get_hunting_score(self, health, distance, is_smaller = True):
+        if health == 0: return 0 # avoid divide by 0
+        if distance == 0: return 1 # avoid divide by 0
+
+        # full health = 1 -> 0 no health, no hunt
+        importance = health / 100
+
+        # close = 1, far (11) = 0
+        proximity = max(1.1 - (distance / 10), 0)
+
+        print(f"hunt? h={health} d={distance} i={importance} p={proximity} s={round(importance*proximity, 2)}")
+        if is_smaller:
+          return importance * proximity # attack!
+        else:
+          return 1 - (importance * proximity)
+
 
     def get_distance(self, p1, p2):
       dist_x = abs(p1["x"] - p2["x"])
