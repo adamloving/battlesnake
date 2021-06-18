@@ -8,7 +8,6 @@ class SnakeBrain(object):
       directions = ["up", "down", "left", "right"]
       random.shuffle(directions)
       valid_choices = []
-      health = data["you"]["health"]
 
       for move in directions:
           position = self.get_next_position(head_position, move)
@@ -22,21 +21,48 @@ class SnakeBrain(object):
       # print(f"Valid choices: {len(valid_choices)} {valid_choices}")
 
       # (valid_choices and scored_choices are the same list)
-      scored_choices = self.score_choices_based_on_food(data, valid_choices)
-      scored_choices = self.score_choices_based_on_hunting(data, scored_choices)
-      # todo: score_based_on_next_head_positions(data["snakes"], valid_choices)
-      # todo: score_choices_based_on_hazards
+      self.score_choices_based_on_food(data, valid_choices)
+      self.score_choices_based_on_hunting(data, valid_choices)
+      self.score_choices_based_on_optionality(data, valid_choices)
+      self.score_choices_based_on_hazards(data, valid_choices)
+
+      # average scores
+      for choice in valid_choices:
+        choice["score"] = sum([
+          choice["food_score"],
+          choice["hunting_score"],
+          choice["hazard_score"],
+          choice["optionality_score"] / 2,
+        ]) / 4
 
       # sort choices so best choice is first
       def by_score(choice):
         return choice["score"]
-      scored_choices.sort(key=by_score)
-      scored_choices.reverse()
+      valid_choices.sort(key=by_score)
+      valid_choices.reverse()
+
+      print(f"----- At {head_position} -----")
+      for i, choice in enumerate(valid_choices):
+        print(f"{i}: {choice}")
+      print("-------------------------------")
 
       # print(f"sorted choices: {scored_choices}")
-      best_choice = scored_choices[0]
+      best_choice = valid_choices[0]
 
       return best_choice["move"]
+
+    def get_hazard_score(self, distance):
+        if distance == 0:
+          return 0
+        else:
+          return 1
+
+    def score_choices_based_on_hazards(self, data, valid_choices):
+      for choice in valid_choices:
+        choice["hazard_score"] = 1
+        for hazard in data["board"]["hazards"]:
+          distance = self.get_distance(choice["position"], hazard)
+          choice["hazard_score"] = self.get_hazard_score(distance)
 
     def score_choices_based_on_food(self, data, choices):
       # todo: what happens when no food on board?
@@ -58,9 +84,7 @@ class SnakeBrain(object):
 
       # based on how hungry we are, increment score for choice based to food
       for choice in choices:
-        choice["score"] = choice["score"] * self.get_food_score(
-          health, choice["closest_food_distance"]
-        )
+        choice["food_score"] = self.get_food_score(health, choice["closest_food_distance"])
 
       return choices
 
@@ -73,7 +97,7 @@ class SnakeBrain(object):
       for choice in choices:
         # opponent_possible_head_position
         choice["closest_ophp_distance"] = 9999999999
-        choice["closest_opponent_size"] = None
+        choice["closest_opponent_size"] = 9999999999
         for snake in data["board"]["snakes"]:
           if snake["id"] == my_id:
             continue
@@ -92,16 +116,34 @@ class SnakeBrain(object):
 
       print(f"{choices}")
       for choice in choices:
-        if choice["closest_opponent_size"] is None:
-          continue
-        print(f"get_hunting_score for {choice['position']} {format(choice['score'], 'f')}")
-        choice["score"] = (choice["score"] + self.get_hunting_score(
+        print(f"get_hunting_score for {choice['position']} d={choice['closest_ophp_distance']}")
+        choice["hunting_score"] = self.get_hunting_score(
           health,
           choice["closest_ophp_distance"],
-          choice["closest_opponent_size"] < my_length
-        ))/2
+          my_length - choice["closest_opponent_size"]
+        )
 
       return choices
+
+    # distance input should be distance to nearest _potential_ next head
+    # (otherwise use score = 1)
+    def get_hunting_score(self, health, distance, length_delta):
+        # full health = 1 -> 0 no health, no hunt
+        importance = 1 - (2.72 ** (- health / 20))
+
+        # close = 1, far (10) = 0
+        proximity = (-1 / 100) * (distance ** 2) + 1
+        print(f"{-1/100} {distance**2}")
+
+        if length_delta > 0: # I'm longer
+          # bugbug: not scaled to 1, skewed to hunt short snakes
+          score = length_delta * importance * proximity # attack!
+        else: # I'm same or shorter (avoid a little bit)
+          score = 1 - (importance * proximity)
+
+        print(f"hunt? h={health} d={distance} ld={length_delta} i={importance} p={proximity} s={score}")
+        return score
+
 
     # returns 1 if should go towards food, 0 if should ignore
     def get_food_score(self, health, distance):
@@ -117,23 +159,6 @@ class SnakeBrain(object):
         print(f"eat? h={health} d={distance} i={importance} p={proximity} s={round(importance*proximity, 10)}")
         return importance * proximity
 
-    # distance input should be distance to nearest _potential_ next head
-    # (otherwise use score = 1)
-    def get_hunting_score(self, health, distance, is_smaller = True):
-        if health == 0: return 0 # avoid divide by 0
-        if distance == 0: return 1 # avoid divide by 0
-
-        # full health = 1 -> 0 no health, no hunt
-        importance = health / 100
-
-        # close = 1, far (11) = 0
-        proximity = max(1.1 - (distance / 10), 0)
-
-        print(f"hunt? h={health} d={distance} i={importance} p={proximity} s={round(importance*proximity, 2)}")
-        if is_smaller:
-          return importance * proximity # attack!
-        else:
-          return 1 - (importance * proximity)
 
 
     def get_distance(self, p1, p2):
@@ -163,7 +188,9 @@ class SnakeBrain(object):
 
 
     def get_next_position(self, current_position, direction):
-        new_position = current_position.copy()
+        new_position = {
+          "x": current_position["x"], "y": current_position["y"]
+        }
         if direction == "up":
             new_position["y"] = new_position["y"] + 1
         elif direction == "down":
@@ -213,3 +240,52 @@ class SnakeBrain(object):
         print("")
 
         return matrix
+
+    def score_choices_based_on_optionality(self, data, choices, max_depth = 5):
+      directions = ["up", "down", "left", "right"]
+      size = data["board"]["width"]
+      max_optionality = 1
+
+      for choice in choices:
+        # print(f"----- {choice}")
+        optionality = 0
+        spot = choice["position"].copy()
+        spot["depth"] = 1
+        connected_open_spots = [spot]
+        all_spots = [choice["position"]] # without depth
+
+        while len(connected_open_spots) > 0:
+          p = connected_open_spots.pop()
+          if p["depth"] > max_depth: continue
+          # print(f"evaluating {p}")
+
+          for move in directions:
+            next_position = self.get_next_position(p, move)
+            # print(f"checking {next_position}")
+            # print(f"new? {next_position not in all_spots}")
+            if self.is_on_board(next_position, size) and \
+              self.is_open(next_position, data["board"]["snakes"]) and \
+              next_position not in all_spots:
+                # print(f"adding {next_position}")
+                all_spots.append(next_position)
+                if self.is_hazard(data, next_position):
+                  optionality = optionality + 0.5
+                else:
+                  optionality = optionality + 1
+                next_spot = next_position.copy()
+                next_spot["depth"] = p["depth"] + 1
+                connected_open_spots.append(next_spot)
+
+        max_optionality = max(max_optionality, optionality)
+        choice["optionality"] = optionality
+
+      for choice in choices:
+        choice["optionality_score"] = choice["optionality"] / max_optionality
+
+      return choices
+
+    def is_hazard(self, data, position):
+      for hazard in data["board"]["hazards"]:
+        if position["x"] == hazard["x"] and position["y"] == hazard["y"]:
+          return True
+      return False

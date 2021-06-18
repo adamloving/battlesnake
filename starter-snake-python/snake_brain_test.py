@@ -11,24 +11,46 @@ class SnakeBrainTest(unittest.TestCase):
         with open('fixtures/example_turn.json') as f:
             self.data = json.load(f)
 
+    def test_optionality_scoring(self):
+        snake = SnakeBrain()
+        opponent = self.data["you"].copy()
+        opponent["id"] = "opponent"
+        opponent["head"] = {"x": 3, "y": 9}
+        # opponent's body creates a tunnel that we don't want to go down
+        opponent["body"] = [
+            {"x": 3, "y": 9}, {"x": 4, "y": 9}, {"x": 5, "y": 9}, {"x": 6, "y": 9},
+            {"x": 6, "y": 10}
+        ]
+        self.data["board"]["snakes"].append(opponent)
+        snake.print_board(self.data)
+
+        choices = snake.score_choices_based_on_optionality(self.data, [
+            { "position": { "x": 3, "y": 10}},
+            { "position": { "x": 2, "y": 9 }}
+        ], 10)
+        print(f"{choices}")
+
     def test_hunt_scoring(self):
         snake = SnakeBrain()
 
         # full health? always hunt regardless of distance
-        self.assertEqual(snake.get_hunting_score(100, 1), 1)
-        self.assertGreater(snake.get_hunting_score(100, 5), .5)
-        self.assertGreaterEqual(snake.get_hunting_score(100, 10), .1)
+        self.assertGreaterEqual(snake.get_hunting_score(100, 1, 3), 0.95)
+        self.assertGreaterEqual(snake.get_hunting_score(100, 5, 3), .5)
+        self.assertLessEqual(snake.get_hunting_score(100, 10, 3), 0.1)
 
         # half health and close? hunt!
-        self.assertEqual(snake.get_hunting_score(50, 1), 0.5)
+        self.assertGreaterEqual(snake.get_hunting_score(50, 1, 1), 0.9)
 
         # half health and far away? probably not
-        self.assertGreaterEqual(snake.get_hunting_score(50, 10), 0.05)
+        self.assertLessEqual(snake.get_hunting_score(50, 10, 3), 0.5)
 
         # low health? don't hunt unless close
-        self.assertGreaterEqual(snake.get_hunting_score(25, 10), 0.025)
-        self.assertEqual(snake.get_hunting_score(25, 1), 0.25)
+        self.assertLessEqual(snake.get_hunting_score(25, 10, 2), 0.1)
+        self.assertGreaterEqual(snake.get_hunting_score(25, 1, 2), 0.7)
 
+        # avoid longer snakes
+        self.assertGreaterEqual(snake.get_hunting_score(25, 1, -1), 0)
+        self.assertGreaterEqual(snake.get_hunting_score(25, 3, -3), 0)
 
     def test_food_scoring(self):
         snake = SnakeBrain()
@@ -47,7 +69,6 @@ class SnakeBrainTest(unittest.TestCase):
 
         # I'm starving, and food sort of nearby, so very important
         self.assertGreaterEqual(snake.get_food_score(10, 3), 0.20)
-
 
     # does it at least do something?
     def test_move(self):
@@ -129,10 +150,12 @@ class SnakeBrainTest(unittest.TestCase):
         opponent = self.data["you"].copy()
         opponent["id"] = "opponent"
         opponent["head"] = {"x": 2, "y": 0}
-        opponent["body"] = [{"x": 2, "y": 0}]
+        opponent["body"] = [{"x": 2, "y": 0}, {"x": 3, "y": 0}]
 
         self.data["board"]["snakes"].append(opponent)
+
         snake = SnakeBrain()
+        snake.print_board(self.data)
         move = snake.get_move(self.data)
         self.assertEqual(move, "up")
 
@@ -148,8 +171,8 @@ class SnakeBrainTest(unittest.TestCase):
         opponent["id"] = "opponent"
         opponent["head"] = {"x": 4, "y": 3}
         opponent["body"] = [{"x": 4, "y": 3}]
-
         self.data["board"]["snakes"].append(opponent)
+
         snake = SnakeBrain()
         move = snake.get_move(self.data)
         self.assertIn(move, ["left", "up", "down"])
