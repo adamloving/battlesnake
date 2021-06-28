@@ -51,6 +51,7 @@ class SnakeBrainTest(unittest.TestCase):
         # avoid longer snakes
         self.assertGreaterEqual(snake.get_hunting_score(25, 1, -1), 0)
         self.assertGreaterEqual(snake.get_hunting_score(25, 3, -3), 0)
+        self.assertLessEqual(snake.get_hunting_score(100, 1, -3), 0.1)
 
     def test_food_scoring(self):
         snake = SnakeBrain()

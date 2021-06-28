@@ -32,7 +32,7 @@ class SnakeBrain(object):
           choice["food_score"],
           choice["hunting_score"],
           choice["hazard_score"],
-          choice["optionality_score"] / 2,
+          choice["optionality_score"],
         ]) / 4
 
       # sort choices so best choice is first
@@ -139,7 +139,10 @@ class SnakeBrain(object):
           # bugbug: not scaled to 1, skewed to hunt short snakes
           score = length_delta * importance * proximity # attack!
         else: # I'm same or shorter (avoid a little bit)
-          score = 1 - (importance * proximity)
+          if distance > 2:
+            return 0.5
+          else:
+            score = 1 - (importance * proximity)
 
         print(f"hunt? h={health} d={distance} ld={length_delta} i={importance} p={proximity} s={score}")
         return score
@@ -151,7 +154,7 @@ class SnakeBrain(object):
         if distance == 0: return 1 # avoid divide by 0
 
         # importance increases from 0 -> 1 as health decreases
-        importance = (100 - health) ** 4 / (100 ** 4)
+        importance = 1 # always get food to prevent others was (100 - health) ** 4 / (100 ** 4)
 
         # close = 1, far = 0
         proximity = 1 / distance
