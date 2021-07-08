@@ -27,7 +27,7 @@ class SnakeBrainTest(unittest.TestCase):
         choices = snake.score_choices_based_on_optionality(self.data, [
             { "position": { "x": 3, "y": 10}},
             { "position": { "x": 2, "y": 9 }}
-        ], 10)
+        ])
         print(f"{choices}")
 
     def test_hunt_scoring(self):
@@ -196,22 +196,23 @@ class SnakeBrainTest(unittest.TestCase):
 
     def test_seeks_food(self):
         snake = SnakeBrain()
-        # snake.print_board(self.data)
+        snake.print_board(self.data)
+        self.data["you"]["health"] = 20
         move = snake.get_move(self.data)
         self.assertEqual(move, "down")
 
-    def test_hunts_short_snake(self):
-        snake = SnakeBrain()
+    # def test_hunts_short_snake(self):
+    #     snake = SnakeBrain()
 
-        # shorter snake right in front of me!
-        self.data["board"]["snakes"].append({
-            "id": "shorty",
-            "body": [{ "x": 5, "y": 10 }],
-            "head": { "x": 5, "y": 10 }
-        })
-        snake.print_board(self.data)
-        move = snake.get_move(self.data)
-        self.assertEqual(move, "right")
+    #     # shorter snake right in front of me!
+    #     self.data["board"]["snakes"].append({
+    #         "id": "shorty",
+    #         "body": [{ "x": 4, "y": 10 }],
+    #         "head": { "x": 4, "y": 10 }
+    #     })
+    #     snake.print_board(self.data)
+    #     move = snake.get_move(self.data)
+    #     self.assertEqual(move, "right")
 
 
 if __name__ == '__main__':

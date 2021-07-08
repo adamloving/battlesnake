@@ -117,11 +117,14 @@ class SnakeBrain(object):
       print(f"{choices}")
       for choice in choices:
         print(f"get_hunting_score for {choice['position']} d={choice['closest_ophp_distance']}")
-        choice["hunting_score"] = self.get_hunting_score(
-          health,
-          choice["closest_ophp_distance"],
-          my_length - choice["closest_opponent_size"]
-        )
+        if choice["closest_ophp_distance"] == 9999999999:
+          choice["hunting_score"] = 0
+        else:
+          choice["hunting_score"] = self.get_hunting_score(
+            health,
+            choice["closest_ophp_distance"],
+            my_length - choice["closest_opponent_size"]
+          )
 
       return choices
 
@@ -133,13 +136,12 @@ class SnakeBrain(object):
 
         # close = 1, far (10) = 0
         proximity = (-1 / 100) * (distance ** 2) + 1
-        print(f"{-1/100} {distance**2}")
 
         if length_delta > 0: # I'm longer
           # bugbug: not scaled to 1, skewed to hunt short snakes
           score = length_delta * importance * proximity # attack!
         else: # I'm same or shorter (avoid a little bit)
-          if distance > 2:
+          if distance > 3:
             return 0.5
           else:
             score = 1 - (importance * proximity)
@@ -147,22 +149,19 @@ class SnakeBrain(object):
         print(f"hunt? h={health} d={distance} ld={length_delta} i={importance} p={proximity} s={score}")
         return score
 
-
     # returns 1 if should go towards food, 0 if should ignore
     def get_food_score(self, health, distance):
         if health == 0: return 0 # avoid divide by 0
         if distance == 0: return 1 # avoid divide by 0
 
         # importance increases from 0 -> 1 as health decreases
-        importance = 1 # always get food to prevent others was (100 - health) ** 4 / (100 ** 4)
+        importance = (100 - health) ** 4 / (100 ** 4)
 
         # close = 1, far = 0
         proximity = 1 / distance
 
         print(f"eat? h={health} d={distance} i={importance} p={proximity} s={round(importance*proximity, 10)}")
         return importance * proximity
-
-
 
     def get_distance(self, p1, p2):
       dist_x = abs(p1["x"] - p2["x"])
@@ -244,46 +243,25 @@ class SnakeBrain(object):
 
         return matrix
 
-    def score_choices_based_on_optionality(self, data, choices, max_depth = 5):
-      directions = ["up", "down", "left", "right"]
+    def score_choices_based_on_optionality(self, data, choices):
       size = data["board"]["width"]
-      max_optionality = 1
 
       for choice in choices:
-        # print(f"----- {choice}")
-        optionality = 0
-        spot = choice["position"].copy()
-        spot["depth"] = 1
-        connected_open_spots = [spot]
-        all_spots = [choice["position"]] # without depth
+        open_count = 0
+        position = choice["position"]
+        for x in range(position["x"] - 3, position["x"] + 4):
+          if x < 0 or x >= size: continue
+          for y in range(position["y"] - 3, position["y"] + 4):
+            if y < 0 or y >= size: continue
+            space_position = { "x": x, "y": y}
+            if self.is_open(space_position, data["board"]["snakes"]):
+              if self.is_hazard(data, space_position):
+                open_count += 0.5
+              else:
+                open_count += 1
 
-        while len(connected_open_spots) > 0:
-          p = connected_open_spots.pop()
-          if p["depth"] > max_depth: continue
-          # print(f"evaluating {p}")
-
-          for move in directions:
-            next_position = self.get_next_position(p, move)
-            # print(f"checking {next_position}")
-            # print(f"new? {next_position not in all_spots}")
-            if self.is_on_board(next_position, size) and \
-              self.is_open(next_position, data["board"]["snakes"]) and \
-              next_position not in all_spots:
-                # print(f"adding {next_position}")
-                all_spots.append(next_position)
-                if self.is_hazard(data, next_position):
-                  optionality = optionality + 0.5
-                else:
-                  optionality = optionality + 1
-                next_spot = next_position.copy()
-                next_spot["depth"] = p["depth"] + 1
-                connected_open_spots.append(next_spot)
-
-        max_optionality = max(max_optionality, optionality)
-        choice["optionality"] = optionality
-
-      for choice in choices:
-        choice["optionality_score"] = choice["optionality"] / max_optionality
+        # print(f"open_count: {open_count}")
+        choice["optionality_score"] = open_count / 49 # evaluating 7x7 grid
 
       return choices
 
