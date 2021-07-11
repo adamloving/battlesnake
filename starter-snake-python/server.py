@@ -33,7 +33,12 @@ class Battlesnake(object):
         # cherrypy.request.json contains information about the game that's about to be played.
         data = cherrypy.request.json
 
+        # load last winner coefficients, mutate and save as current
+        snake = SnakeBrain("./files/last_winner.json")
+        snake.mutate_coefficients()
+        snake.save_coefficients() # save as files/current.json
         print("START")
+
         return "ok"
 
     @cherrypy.expose
@@ -66,7 +71,20 @@ class Battlesnake(object):
         # It's purely for informational purposes, you don't have to make any decisions here.
         data = cherrypy.request.json
 
-        print("END")
+        # presumably look and see if I'm on the board to determine if I won
+        found = False
+        me_id = data["you"]["id"]
+        for snake in data["board"]["snakes"]:
+            if snake["id"] == me_id:
+                found = True
+
+        if found:
+            snake = SnakeBrain()
+            snake.save_coefficients("./files/last_winner.json")
+            snake.save_coefficients(f'./archive/generation-{snake.coefficients["generation"]}.json')
+            print("END: alive")
+
+        print ("END")
         return "ok"
 
 

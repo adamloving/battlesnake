@@ -1,6 +1,38 @@
+import json
 import random
 
 class SnakeBrain(object):
+
+    coefficients = {
+      "generation": 1,
+      "food": 1,
+      "hunting": 1,
+      "hazard": 1,
+      "space": 1
+    }
+
+    def __init__(self, coefficient_file_name="./files/current.json"):
+      self.load_coefficients(coefficient_file_name)
+      # print(f"Loaded: {self.coefficients}")
+      return
+
+    def mutate_coefficients(self):
+      self.coefficients["generation"] = self.coefficients["generation"] + 1
+      for name in self.coefficients.keys():
+        if name == "generation": continue
+        self.coefficients[name] = self.coefficients[name] + (random.choice([-1, 1]) * 0.1)
+      return
+
+    def load_coefficients(self, name):
+      with open(name, 'r') as f:
+        self.coefficients = json.load(f)
+      return
+
+    # only save after win
+    def save_coefficients(self, name="./files/current.json"):
+      with open(name, 'w') as f:
+        json.dump(self.coefficients, f)
+      return
 
     def get_move(self, data):
       size = data["board"]["width"]
@@ -29,10 +61,10 @@ class SnakeBrain(object):
       # average scores
       for choice in valid_choices:
         choice["score"] = sum([
-          choice["food_score"],
-          choice["hunting_score"],
-          choice["hazard_score"],
-          choice["optionality_score"],
+          self.coefficients["food"] * choice["food_score"],
+          self.coefficients["hunting"] * choice["hunting_score"],
+          self.coefficients["hazard"] * choice["hazard_score"],
+          self.coefficients["space"] * choice["optionality_score"],
         ]) / 4
 
       # sort choices so best choice is first
@@ -187,7 +219,6 @@ class SnakeBrain(object):
             return False
 
       return True
-
 
     def get_next_position(self, current_position, direction):
         new_position = {

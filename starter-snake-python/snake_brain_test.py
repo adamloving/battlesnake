@@ -11,6 +11,10 @@ class SnakeBrainTest(unittest.TestCase):
         with open('fixtures/example_turn.json') as f:
             self.data = json.load(f)
 
+    def test_save_coefficients(self):
+        snake = SnakeBrain()
+        snake.save_coefficients()
+
     def test_optionality_scoring(self):
         snake = SnakeBrain()
         opponent = self.data["you"].copy()
