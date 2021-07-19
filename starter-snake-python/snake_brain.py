@@ -55,7 +55,7 @@ class SnakeBrain(object):
       # (valid_choices and scored_choices are the same list)
       self.score_choices_based_on_food(data, valid_choices)
       self.score_choices_based_on_hunting(data, valid_choices)
-      self.score_choices_based_on_optionality(data, valid_choices)
+      self.score_choices_based_on_space(data, valid_choices)
       self.score_choices_based_on_hazards(data, valid_choices)
 
       # average scores
@@ -64,7 +64,7 @@ class SnakeBrain(object):
           self.coefficients["food"] * choice["food_score"],
           self.coefficients["hunting"] * choice["hunting_score"],
           self.coefficients["hazard"] * choice["hazard_score"],
-          self.coefficients["space"] * choice["optionality_score"],
+          self.coefficients["space"] * choice["space_score"],
         ]) / 4
 
       # sort choices so best choice is first
@@ -274,7 +274,7 @@ class SnakeBrain(object):
 
         return matrix
 
-    def score_choices_based_on_optionality(self, data, choices):
+    def score_choices_based_on_space(self, data, choices):
       size = data["board"]["width"]
 
       for choice in choices:
@@ -292,7 +292,7 @@ class SnakeBrain(object):
                 open_count += 1
 
         # print(f"open_count: {open_count}")
-        choice["optionality_score"] = open_count / 49 # evaluating 7x7 grid
+        choice["space_score"] = open_count / 49 # evaluating 7x7 grid
 
       return choices
 
