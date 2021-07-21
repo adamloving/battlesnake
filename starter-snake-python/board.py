@@ -1,4 +1,6 @@
+import copy
 import itertools
+import random
 
 DIRECTIONS = directions = ["up", "down", "left", "right"]
 
@@ -15,6 +17,11 @@ class Board(object):
         self.size = self.board["width"]
         self.matrix = self.get_matrix()
         self.you_id = you_id
+
+        # preserve this collection and remove killed snakes from board["snakes"]
+        self.snakes_by_id = {}
+        for snake in self.board["snakes"]:
+            self.snakes_by_id[snake["id"]] = snake
         
     def get_matrix(self): 
         # initialize a list of lists
@@ -42,7 +49,10 @@ class Board(object):
         for y in reversed(range(size)):
             print(" | ", end='')
             for x in range(size):
-                print(f"{self.matrix[x][y][0]}", end='')
+                id = self.matrix[x][y]
+                if len(id) > 1:
+                    id = id[2:3]
+                print(f"{id}", end='')
                 print(" | ", end='')
             print("")
         print("")
@@ -52,15 +62,16 @@ class Board(object):
         boards = []
         all_pnps = []
 
-        for i, snake in enumerate(self.board["snakes"]):
+        for i, snake in enumerate(random.shuffle(self.board["snakes"])):
             is_me = snake["id"] == self.you_id
             pnps = [] # possible next positions
             for move in DIRECTIONS:
                 next_position = self.get_next_position(snake["head"], move)
                 if not self.is_on_board(next_position): continue
                 if next_position in snake["body"]: continue
+                # print(f"np: {next_position} {next_position in snake['body']}")
                 pnps.append({ 
-                    "index": i,
+                    "id": snake["id"],
                     "move": move, 
                     "is_me":  is_me,
                     "position": next_position
@@ -71,49 +82,65 @@ class Board(object):
 
         #print("####")
         #[print(len(pnps)) for pnps in all_pnps]
-        print(f"Combos: {len(combos)}")
+        # print(f"Combos: {len(combos)}")
 
         # resolve conflicts
         for combo in combos:            
-            new_board = Board(self.board.copy(), self.you_id)
+            # print("NEXT COMBO")
+            # self.print()
+            new_board = Board(copy.deepcopy(self.board), self.you_id)
             new_board.combo = combo
             for pnp in combo:
                 p = pnp["position"]
-                marker = f"S:{snake['id']}"
-                current_snake_index =  pnp["index"]
-                current_snake = new_board.board["snakes"][current_snake_index]
-                #print(f"current_snake: {current_snake}")
+                # print(f"pnp: {pnp}")
+                marker = f"S:{pnp['id']}"
+                current_snake = new_board.snakes_by_id[pnp["id"]]
                 occupant = new_board.matrix[p["x"]][p["y"]]
                 
+                # bugbug: longer snake may be coming later?
                 if occupant == " ":
-                    #print(f"No occupant {p} {marker}")
+                    # print(f"No occupant {p} {marker}")
                     new_board.matrix[p["x"]][p["y"]] = marker
-                else:
-                    if occupant[0] == "S":
-                        occupant_id = occupant[2:]
-                        print(f"o_id: >{occupant_id}<")
-                        occupant_snake = self.get_snake_by_id(occupant_id)
+                    current_snake["body"].insert(0, p)
+                    current_snake["head"] = p
+                elif occupant[0] == "S":
+                    # print(f"Other snake {occupant}")
+                    occupant_id = occupant[2:]
+                    occupant_snake = self.snakes_by_id[occupant_id]
+
+                    if occupant_snake["head"] == p:                        
                         if occupant_snake["length"] > current_snake["length"]:
                             new_board.kill_snake(current_snake["id"])
-                        else:
+                        elif occupant_snake["length"] < current_snake["length"]:
                             new_board.kill_snake(occupant_snake["id"])
+                            new_board.matrix[p["x"]][p["y"]] = marker
+                            current_snake["body"].insert(0, p)
+                            current_snake["head"] = p
+                        else:
+                            # bugbug should be a 50/50 case
+                            new_board.kill_snake(current_snake["id"])
+                    else:
+                        # I ran into someone
+                        new_board.kill_snake(current_snake["id"])
+
+                else: # ignore food or hazard
+                    # print(f"food or hazard")
+                    new_board.matrix[p["x"]][p["y"]] = marker
+                    current_snake["body"].insert(0, p)
+                    current_snake["head"] = p
+                
                     
             # todo: eval food and move tails        
             # print(combo)
+            # print('\x1bc')
             # new_board.print()
             boards.append(new_board)
                 
         return boards
 
-    def get_snake_by_id(self, id):
-        for snake in self.board["snakes"]:
-            print(snake["id"])
-            if snake["id"] == id: 
-                return snake
-        raise Exception(f"Snake not found {id}")
-
     def kill_snake(self, id):
-        snake = self.get_snake_by_id(id)
+        # print(f"kill {id}")
+        snake = self.snakes_by_id[id]
         for position in snake["body"]:
             self.matrix[position["x"]][position["y"]] = " "
         self.board["snakes"] = [snake for snake in self.board["snakes"] if snake["id"] != id]

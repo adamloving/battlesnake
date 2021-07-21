@@ -8,7 +8,7 @@ from maximax import maximax
 class MaximaxTest(unittest.TestCase):
 
     def setUp(self):
-        with open('fixtures/three_snakes.json') as f:
+        with open('fixtures/short_snake.json') as f:
             self.data = json.load(f)
 
     def xtest_maximax_depth0(self):
@@ -19,7 +19,7 @@ class MaximaxTest(unittest.TestCase):
     def test_maximax_depth(self):
         b = Board(self.data["board"], self.data["you"]["id"])
         b.print()
-        print(maximax(b, 5))
+        print(maximax(b, 3))
 
 if __name__ == '__main__':
     unittest.main()

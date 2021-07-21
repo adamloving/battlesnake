@@ -1,6 +1,9 @@
 import json
 import random
 
+from board import Board
+from maximax import maximax;
+
 class SnakeBrain(object):
 
     coefficients = {
@@ -8,7 +11,8 @@ class SnakeBrain(object):
       "food": 1,
       "hunting": 1,
       "hazard": 1,
-      "space": 1
+      "space": 1,
+      "maximax": 1
     }
 
     def __init__(self, coefficient_file_name="./files/current.json"):
@@ -57,6 +61,7 @@ class SnakeBrain(object):
       self.score_choices_based_on_hunting(data, valid_choices)
       self.score_choices_based_on_optionality(data, valid_choices)
       self.score_choices_based_on_hazards(data, valid_choices)
+      self.score_choices_based_on_maximax(data, valid_choices)
 
       # average scores
       for choice in valid_choices:
@@ -65,6 +70,7 @@ class SnakeBrain(object):
           self.coefficients["hunting"] * choice["hunting_score"],
           self.coefficients["hazard"] * choice["hazard_score"],
           self.coefficients["space"] * choice["optionality_score"],
+          self.coefficients["maximax"] * choice["maximax_score"],
         ]) / 4
 
       # sort choices so best choice is first
@@ -301,3 +307,15 @@ class SnakeBrain(object):
         if position["x"] == hazard["x"] and position["y"] == hazard["y"]:
           return True
       return False
+
+    def score_choices_based_on_maximax(self, data, choices):
+      board = Board(data["board"], data["you"]["id"])
+      result = maximax(board, 1)
+      move = result[0]
+      score = result[1]
+      print(f"maximax_choice: {result}")
+
+      for choice in choices:
+        choice["maximax_score"] = score if choice["move"] == move else 0
+      
+      return 0
