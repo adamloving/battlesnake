@@ -154,7 +154,6 @@ class Board(object):
             self.matrix[position["x"]][position["y"]] = " "
         self.board["snakes"] = [snake for snake in self.board["snakes"] if snake["id"] != id]
 
-
     # translate move into position (without bounds check)
     def get_next_position(self, current_position, direction):
         new_position = {
