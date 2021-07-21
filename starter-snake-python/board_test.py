@@ -7,7 +7,7 @@ from board import Board
 class BoardTest(unittest.TestCase):
 
     def setUp(self):
-        with open('fixtures/three_snakes.json') as f:
+        with open('fixtures/head_to_head.json') as f:
             self.data = json.load(f)
 
     # def test_creation(self):
@@ -15,7 +15,7 @@ class BoardTest(unittest.TestCase):
     #     b.print()
 
     def test_generate(self):
-        b = Board(self.data["board"])
+        b = Board(self.data["board"], self.data["you"]["id"])
         b.print()
         boards = b.generate()
 

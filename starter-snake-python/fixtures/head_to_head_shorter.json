@@ -1,0 +1,98 @@
+{
+    "game": {
+        "id": "b9611d64-d7da-4713-ac6a-5fadaca7df7d",
+        "ruleset": {
+            "name": "solo",
+            "version": "v1.0.17"
+        },
+        "timeout": 500
+    },
+    "turn": 2,
+    "board": {
+        "height": 11,
+        "width": 11,
+        "snakes": [
+            {
+                "id": "1",
+                "name": "Drake",
+                "latency": "221",
+                "health": 98,
+                "body": [
+                    {
+                        "x": 2,
+                        "y": 5
+                    },
+                    {
+                        "x": 1,
+                        "y": 5
+                    }
+                ],
+                "head": {
+                    "x": 2,
+                    "y": 5
+                },
+                "length": 2,
+                "shout": ""
+            },
+            {
+                "id": "2",
+                "name": "Number 2",
+                "latency": "221",
+                "health": 98,
+                "body": [
+                    {
+                        "x": 4,
+                        "y": 5
+                    },
+                    {
+                        "x": 5,
+                        "y": 5
+                    },
+                    {
+                        "x": 6,
+                        "y": 5
+                    }
+                ],
+                "head": {
+                    "x": 4,
+                    "y": 5
+                },
+                "length": 3,
+                "shout": ""
+            }
+        ],
+        "food": [
+            {
+                "x": 0,
+                "y": 8
+            },
+            {
+                "x": 5,
+                "y": 5
+            }
+        ],
+        "hazards": []
+    },
+    "you": {
+        "id": "1",
+        "name": "Drake",
+        "latency": "221",
+        "health": 98,
+        "body": [
+            {
+                "x": 2,
+                "y": 5
+            },
+            {
+                "x": 1,
+                "y": 5
+            }
+        ],
+        "head": {
+            "x": 2,
+            "y": 5
+        },
+        "length": 2,
+        "shout": ""
+    }
+}

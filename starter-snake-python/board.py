@@ -10,7 +10,7 @@ class Board(object):
         "width": 11,
         "snakes": [],
         "food": [],
-        "hazards": []        
+        "hazards": []
     }, you_id = ""):
         self.board = board
         self.size = self.board["width"]
@@ -21,8 +21,8 @@ class Board(object):
         self.snakes_by_id = {}
         for snake in self.board["snakes"]:
             self.snakes_by_id[snake["id"]] = snake
-        
-    def get_matrix(self): 
+
+    def get_matrix(self):
         # initialize a list of lists
         matrix = [[" " for x in range(self.size)] for y in range(self.size)]
 
@@ -41,7 +41,7 @@ class Board(object):
                 matrix[body_position["x"]][body_position["y"]] = f"S:{snake['id']}"
 
         return matrix
-    
+
     def print(self):
         size = len(self.matrix)
         print("")
@@ -75,22 +75,22 @@ class Board(object):
                 if not self.is_on_board(next_position): continue
                 if self.matrix[next_position['x']][next_position['y']][0] == "S": continue
                 # print(f"np: {snake['id']} {move} {next_position}")
-                pnps.append({ 
+                pnps.append({
                     "id": snake["id"],
-                    "move": move, 
+                    "move": move,
                     "is_me":  is_me,
                     "position": next_position
                 })
             all_pnps.append(pnps)
-        
+
         combos = list(itertools.product(*all_pnps))
 
         #print("####")
         #[print(len(pnps)) for pnps in all_pnps]
-        print(f"Combos: {len(combos)}")
+        # print(f"Combos: {len(combos)}")
 
         # resolve conflicts
-        for combo in combos:            
+        for combo in combos:
             # print("NEXT COMBO")
             # self.print()
             new_board = Board(copy.deepcopy(self.board), self.you_id)
@@ -101,7 +101,7 @@ class Board(object):
                 marker = f"S:{pnp['id']}"
                 current_snake = new_board.snakes_by_id[pnp["id"]]
                 occupant = new_board.matrix[p["x"]][p["y"]]
-                
+
                 if occupant == " ":
                     #print(f"No occupant {p} {marker}")
                     new_board.matrix[p["x"]][p["y"]] = marker
@@ -112,7 +112,7 @@ class Board(object):
                     occupant_id = occupant[2:]
                     occupant_snake = new_board.snakes_by_id[occupant_id]
 
-                    if occupant_snake["head"] == p:                        
+                    if occupant_snake["head"] == p:
                         if occupant_snake["length"] > current_snake["length"]:
                             new_board.kill_snake(current_snake["id"])
                         elif occupant_snake["length"] < current_snake["length"]:
@@ -137,14 +137,14 @@ class Board(object):
                     current_snake["body"].insert(0, p)
                     current_snake["head"] = p
                     # bugbug: remove from board["food"] and board["hazards"]
-                
-                    
-            # todo: eval food and move tails        
+
+
+            # todo: eval food and move tails
             # print(combo)
             # print('\x1bc')
             # new_board.print()
             boards.append(new_board)
-                
+
         return boards
 
     def kill_snake(self, id):

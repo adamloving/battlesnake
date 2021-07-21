@@ -8,7 +8,7 @@ from maximax import maximax
 class MaximaxTest(unittest.TestCase):
 
     def setUp(self):
-        with open('fixtures/short_snake.json') as f:
+        with open('fixtures/head_to_head_shorter.json') as f:
             self.data = json.load(f)
 
     def xtest_maximax_depth0(self):
