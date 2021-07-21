@@ -1,8 +1,7 @@
 
 
 def maximax(board, depth):
-    # best = [ None, -1]
-    best = [ None, -999, {}]
+    best = [ None, None, None, {}, {}]
     total_alive = len(board.board["snakes"])
 
     if depth == 0 or total_alive <= 1:
@@ -13,16 +12,26 @@ def maximax(board, depth):
 
         if is_alive and total_alive == 1:
             score = depth # win (high depth = sooner, better)
-        elif is_alive:
+            other_score = -depth
+        elif is_alive: # multiple alive
             score = 1 - (total_alive - 1) * .25
+            other_score = (total_alive - 1) * .25
         else:
             score = -depth # lose (high depth = sooner, worse)
+            other_score = depth
+
+        # discount hazard
+        me = board.snakes_by_id[board.you_id]
+        if me["head"] in board.board["hazards"]:
+            score = score - 0.5
 
         # print(f"leaf {depth} {score}")
-        return [ None, score, {}]
+        return [ None, score, other_score, {}, {}]
 
     # print(f"--- depth {depth} ---")
     scores_by_move = {}
+    scores_by_move_other = {}
+    best_move = None
     for board in board.generate():
         my_move = None
         for pnp in board.combo:
@@ -31,18 +40,18 @@ def maximax(board, depth):
         if my_move is None: continue
 
         # print(f"d{depth} Moves: {[pnp['move'] for pnp in board.combo]}")
-        [ move, score, sbm ] = maximax(board, depth - 1)
-        ## print(f"Consider: {board.combo} {[my_move,score]}")
+        [ move, score, other_score, sbm, sbm_other ] = maximax(board, depth - 1)
+        # print(f"{[ move, score, other_score, sbm, sbm_other ]}")
 
-        scores_by_move.setdefault(my_move, [])
-        scores_by_move[my_move].append(score)
+        # pick best move for me with best move for other guy
+        scores_by_move.setdefault(my_move, -9999)
+        scores_by_move_other.setdefault(my_move, -9999)
 
-    for move in scores_by_move:
-        avg = sum(scores_by_move[move]) / len(scores_by_move[move])
-        scores_by_move[move] = avg
-        if (avg > best[1]):
-            best = [move, avg, scores_by_move]
+        if score > scores_by_move[my_move] and other_score > scores_by_move_other[my_move]:
+            best_move = my_move
+            scores_by_move[my_move] = score
+            scores_by_move_other[my_move] = other_score
 
-    # print(f"scores_by_move {scores_by_move}")
+    # print(f"{depth}: scores_by_move {scores_by_move} {scores_by_move_other}")
     # print(f"best of depth {depth} {best}")
-    return best
+    return [ best_move, scores_by_move[best_move], scores_by_move_other[best_move], scores_by_move, scores_by_move_other]

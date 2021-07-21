@@ -312,8 +312,8 @@ class SnakeBrain(object):
 
     def score_choices_based_on_maximax(self, data, choices):
       board = Board(data["board"], data["you"]["id"])
-      [move, score, scores_by_move] = maximax(board, 3)
-      print(f"maximax_choice: {move} {scores_by_move}")
+      [ best_move, score, other_score, scores_by_move, scores_by_move_other] = maximax(board, 3)
+      print(f"maximax_choice: {best_move} {scores_by_move} {scores_by_move_other}")
 
       for choice in choices:
         choice["maximax_score"] = scores_by_move.get(choice["move"], 0.5)
