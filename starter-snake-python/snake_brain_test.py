@@ -15,7 +15,7 @@ class SnakeBrainTest(unittest.TestCase):
         snake = SnakeBrain()
         snake.save_coefficients()
 
-    def test_optionality_scoring(self):
+    def test_space_scoring(self):
         snake = SnakeBrain()
         opponent = self.data["you"].copy()
         opponent["id"] = "opponent"
@@ -28,7 +28,7 @@ class SnakeBrainTest(unittest.TestCase):
         self.data["board"]["snakes"].append(opponent)
         snake.print_board(self.data)
 
-        choices = snake.score_choices_based_on_optionality(self.data, [
+        choices = snake.score_choices_based_on_space(self.data, [
             { "position": { "x": 3, "y": 10}},
             { "position": { "x": 2, "y": 9 }}
         ])
