@@ -70,8 +70,8 @@ class SnakeBrain(object):
           self.coefficients["hunting"] * choice["hunting_score"],
           self.coefficients["hazard"] * choice["hazard_score"],
           self.coefficients["space"] * choice["optionality_score"],
-          self.coefficients["maximax"] * choice["maximax_score"],
-        ]) / 4
+          self.coefficients["maximax"] * choice["maximax_score"]
+        ]) / 5
 
       # sort choices so best choice is first
       def by_score(choice):
@@ -180,7 +180,7 @@ class SnakeBrain(object):
           score = length_delta * importance * proximity # attack!
         else: # I'm same or shorter (avoid a little bit)
           if distance > 3:
-            return 0.5
+            return 0.5 # don't care
           else:
             score = 1 - (importance * proximity)
 
@@ -312,12 +312,10 @@ class SnakeBrain(object):
 
     def score_choices_based_on_maximax(self, data, choices):
       board = Board(data["board"], data["you"]["id"])
-      result = maximax(board, 3)
-      move = result[0]
-      score = result[1]
-      print(f"maximax_choice: {result}")
+      [move, score, scores_by_move] = maximax(board, 3)
+      print(f"maximax_choice: {move} {scores_by_move}")
 
       for choice in choices:
-        choice["maximax_score"] = score if choice["move"] == move else 0
-      
+        choice["maximax_score"] = scores_by_move.get(choice["move"], 0.5)
+
       return 0
