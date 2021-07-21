@@ -2,7 +2,7 @@
 
 def maximax(board, depth):
     # best = [ None, -1]
-    best = [ None, -1]
+    best = [ None, -999]
     total_alive = len(board.board["snakes"])
 
     if depth == 0 or total_alive <= 1:
@@ -11,15 +11,18 @@ def maximax(board, depth):
         else:
             is_alive = board.board["snakes"][0]["id"] == board.you_id
     
-        if is_alive:
+        if is_alive and total_alive == 1:
+            score = 100 # win
+        elif is_alive:
             score = 1 - (total_alive - 1) * .25
         else:
-            score = -1
+            score = -100 # lose
             
-        print(f"leaf {depth} {score}")
+        # print(f"leaf {depth} {score}")
         return [ None, score]
 
     print(f"--- depth {depth} ---")
+    scores_by_move = {}
     for board in board.generate():
         my_move = None
         for pnp in board.combo:
@@ -28,9 +31,16 @@ def maximax(board, depth):
         if my_move is None: continue
 
         [ move, score ] = maximax(board, depth - 1)
+        print(f"Consider: {board.combo} {[my_move,score]}")
+
+        scores_by_move.setdefault(my_move, [])
+        scores_by_move[my_move].append(score)
+
+    for move in scores_by_move:
+        avg = sum(scores_by_move[move]) / len(scores_by_move[move])
+        if (avg > best[1]):
+            best = [move, avg]
         
-        if score > best[1]:
-            best = [ my_move, score ]
-        
-    print(f"best of depth {depth} {best}")
+    # print(f"scores_by_move {scores_by_move}")   
+    # print(f"best of depth {depth} {best}")
     return best
