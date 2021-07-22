@@ -56,25 +56,25 @@ class Board(object):
             print("")
         print("")
 
-    # generate possible next boards
-    def generate(self):
-        boards = []
+    # generate all combinations of valid possible next positions
+    def generate_pnp_combos(self):
         all_pnps = []
         my_head = self.snakes_by_id[self.you_id]["head"]
 
-        for i, snake in enumerate(self.board["snakes"]):
+        for snake in self.board["snakes"]:
             is_me = snake["id"] == self.you_id
 
             if not is_me and self.get_distance(my_head, snake["head"]) >= 3:
-                # print(f"ignore far away {snake['id']}")
+                print(f"ignore far away {snake['id']}")
                 continue # ignore distant snakes
 
             pnps = [] # possible next positions
             for move in DIRECTIONS:
                 next_position = self.get_next_position(snake["head"], move)
                 if not self.is_on_board(next_position): continue
-                if self.matrix[next_position['x']][next_position['y']][0] == "S": continue
-                # print(f"np: {snake['id']} {move} {next_position}")
+                if self.is_occupied(next_position): continue
+                
+                print(f"possible move: {snake['id']} {move} {next_position}")
                 pnps.append({
                     "id": snake["id"],
                     "move": move,
@@ -83,30 +83,32 @@ class Board(object):
                 })
             all_pnps.append(pnps)
 
-        combos = list(itertools.product(*all_pnps))
+        return list(itertools.product(*all_pnps))
 
-        #print("####")
-        #[print(len(pnps)) for pnps in all_pnps]
-        # print(f"Combos: {len(combos)}")
+
+
+    # generate possible next boards
+    def generate(self):
+        boards = []
+        combos = self.generate_pnp_combos()
+        print(f"Combos: {len(combos)}")
 
         # resolve conflicts
         for combo in combos:
-            # print("NEXT COMBO")
-            # self.print()
+            # print("--- START ---")
             new_board = Board(copy.deepcopy(self.board), self.you_id)
+            # new_board.print()
             new_board.combo = combo
             for pnp in combo:
+                # print("pnp ---")
                 p = pnp["position"]
-                # print(f"pnp: {pnp}")
-                marker = f"S:{pnp['id']}"
                 current_snake = new_board.snakes_by_id[pnp["id"]]
                 occupant = new_board.matrix[p["x"]][p["y"]]
 
                 if occupant == " ":
-                    #print(f"No occupant {p} {marker}")
-                    new_board.matrix[p["x"]][p["y"]] = marker
-                    current_snake["body"].insert(0, p)
-                    current_snake["head"] = p
+                    #print(f"No occupant {p}")
+                    new_board.move_snake(pnp["id"], p)
+                    # new_board.debuglog.push(f"{pnp['id']} moved pnp['move']")
                 elif occupant[0] == "S":
                     #print(f"Other snake {p} {occupant}")
                     occupant_id = occupant[2:]
@@ -117,15 +119,14 @@ class Board(object):
                             new_board.kill_snake(current_snake["id"])
                         elif occupant_snake["length"] < current_snake["length"]:
                             new_board.kill_snake(occupant_snake["id"])
-                            new_board.matrix[p["x"]][p["y"]] = marker
-                            current_snake["body"].insert(0, p)
-                            current_snake["head"] = p
+                            new_board.move_snake(current_snake["id"], p)
                         else:
                             #print("same length")
                             # bugbug should be a 50/50 case
                             new_board.kill_snake(current_snake["id"])
                     else:
-                        #print("wtf")
+                        print(f"wtf {pnp} >{occupant}<")
+                        # new_board.print()
                         #print(current_snake)
                         #print(occupant_snake)
                         # I ran into someone (this shouldn't happen)
@@ -133,13 +134,8 @@ class Board(object):
 
                 else: # ignore food or hazard
                     # print(f"food or hazard at {p}")
-                    new_board.matrix[p["x"]][p["y"]] = marker
-                    current_snake["body"].insert(0, p)
-                    current_snake["head"] = p
-                    # bugbug: remove from board["food"] and board["hazards"]
-
-
-            # todo: eval food and move tails
+                    new_board.move_snake(current_snake["id"], p)
+            
             # print(combo)
             # print('\x1bc')
             # new_board.print()
@@ -148,11 +144,30 @@ class Board(object):
         return boards
 
     def kill_snake(self, id):
-        # print(f"kill {id}")
+        #print(f"kill {id}")
         snake = self.snakes_by_id[id]
         for position in snake["body"]:
             self.matrix[position["x"]][position["y"]] = " "
         self.board["snakes"] = [snake for snake in self.board["snakes"] if snake["id"] != id]
+        self.snakes_by_id.pop(id, None) # remove from dict
+
+    # todo eval food
+    def move_snake(self, id, p):
+        snake = self.snakes_by_id[id]
+        marker = f"S:{id}"
+
+        # remove and ignore food and hazards
+        occupant = self.matrix[p["x"]][p["y"]]
+        if occupant == "F": self.board["food"].remove(p)
+        if occupant == "H": self.board["hazards"].remove(p)
+
+        snake["head"] = p
+        snake["body"].insert(0, p)
+        tail = snake["body"].pop()
+
+        self.matrix[p["x"]][p["y"]] = marker
+        self.matrix[tail["x"]][tail["y"]] = " "
+        
 
     # translate move into position (without bounds check)
     def get_next_position(self, current_position, direction):
@@ -182,8 +197,49 @@ class Board(object):
 
       return True
 
+    def is_occupied(self, position):
+        return self.matrix[position['x']][position['y']][0] == "S"
+
     def get_distance(self, p1, p2):
       dist_x = abs(p1["x"] - p2["x"])
       dist_y = abs(p1["y"] - p2["y"])
       # print(f"dist: {p1} -> {p2} = {dist_x} + {dist_y}")
       return dist_x + dist_y
+
+    def score_for_current_player(self):
+        total_alive = len(self.board["snakes"])
+
+        if total_alive == 0: return 0
+
+        is_alive = False
+        for snake in self.board["snakes"]:
+            is_alive = snake["id"] == self.you_id
+            if is_alive: break
+        
+        if not is_alive: return 0 # lose!
+        
+        others_penalty = (total_alive - 1) * .25
+
+        hazard_penalty = 0
+        me = self.snakes_by_id[self.you_id]
+        if me["head"] in self.board["hazards"]:
+            hazard_penalty = 0.5
+    
+        if is_alive and total_alive == 1: return 1 # win!
+
+        return max(0, 1 - others_penalty - hazard_penalty)
+
+    def score_for_others(self):
+        total_alive = len(self.board["snakes"])
+
+        if total_alive == 0:
+            return 0 # everybody dead
+
+        is_you_alive = False
+        for snake in self.board["snakes"]:
+            is_you_alive = snake["id"] == self.you_id
+            if is_you_alive: break 
+        
+        if not is_you_alive: return 1 # we killed him
+
+        return (total_alive - 1) * .25

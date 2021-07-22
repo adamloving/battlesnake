@@ -316,6 +316,6 @@ class SnakeBrain(object):
       print(f"maximax_choice: {best_move} {scores_by_move} {scores_by_move_other}")
 
       for choice in choices:
-        choice["maximax_score"] = scores_by_move.get(choice["move"], 0.5)
+        choice["maximax_score"] = scores_by_move.get(choice["move"], 0) # zero since move not considered for a reason (invalid)
 
       return 0
