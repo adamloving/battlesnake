@@ -64,7 +64,7 @@ class Board(object):
         for snake in self.board["snakes"]:
             is_me = snake["id"] == self.you_id
 
-            if not is_me and self.get_distance(my_head, snake["head"]) >= 3:
+            if not is_me and self.get_distance(my_head, snake["head"]) >= 4:
                 print(f"ignore far away {snake['id']}")
                 continue # ignore distant snakes
 
