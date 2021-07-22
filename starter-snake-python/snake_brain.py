@@ -59,7 +59,7 @@ class SnakeBrain(object):
       # (valid_choices and scored_choices are the same list)
       self.score_choices_based_on_food(data, valid_choices)
       self.score_choices_based_on_hunting(data, valid_choices)
-      self.score_choices_based_on_optionality(data, valid_choices)
+      self.score_choices_based_on_space(data, valid_choices)
       self.score_choices_based_on_hazards(data, valid_choices)
       self.score_choices_based_on_maximax(data, valid_choices)
 
@@ -69,7 +69,7 @@ class SnakeBrain(object):
           self.coefficients["food"] * choice["food_score"],
           self.coefficients["hunting"] * choice["hunting_score"],
           self.coefficients["hazard"] * choice["hazard_score"],
-          self.coefficients["space"] * choice["optionality_score"],
+          self.coefficients["space"] * choice["space_score"],
           self.coefficients["maximax"] * choice["maximax_score"]
         ]) / 5
 
@@ -85,9 +85,12 @@ class SnakeBrain(object):
       print("-------------------------------")
 
       # print(f"sorted choices: {scored_choices}")
-      best_choice = valid_choices[0]
-
-      return best_choice["move"]
+      if len(valid_choices) > 0:
+        best_choice = valid_choices[0]
+        return best_choice["move"]
+      else: 
+        print("No valid moves")
+        return None
 
     def get_hazard_score(self, distance):
         if distance == 0:
@@ -282,7 +285,7 @@ class SnakeBrain(object):
 
         return matrix
 
-    def score_choices_based_on_optionality(self, data, choices):
+    def score_choices_based_on_space(self, data, choices):
       size = data["board"]["width"]
 
       for choice in choices:
@@ -300,7 +303,7 @@ class SnakeBrain(object):
                 open_count += 1
 
         # print(f"open_count: {open_count}")
-        choice["optionality_score"] = open_count / 49 # evaluating 7x7 grid
+        choice["space_score"] = open_count / 49 # evaluating 7x7 grid
 
       return choices
 
@@ -312,10 +315,10 @@ class SnakeBrain(object):
 
     def score_choices_based_on_maximax(self, data, choices):
       board = Board(data["board"], data["you"]["id"])
-      [ best_move, score, other_score, scores_by_move, scores_by_move_other] = maximax(board, 3)
-      print(f"maximax_choice: {best_move} {scores_by_move} {scores_by_move_other}")
+      [ best_move, score, score_by_move] = maximax(board, 3) # score is average delta
+      print(f"maximax_choice: {best_move} {score}")
 
       for choice in choices:
-        choice["maximax_score"] = scores_by_move.get(choice["move"], 0) # zero since move not considered for a reason (invalid)
-
-      return 0
+        choice["maximax_score"] = score_by_move.get(choice["move"], 0)
+        
+      return choices

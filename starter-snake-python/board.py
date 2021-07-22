@@ -211,10 +211,7 @@ class Board(object):
 
         if total_alive == 0: return 0
 
-        is_alive = False
-        for snake in self.board["snakes"]:
-            is_alive = snake["id"] == self.you_id
-            if is_alive: break
+        is_alive = self.you_id in self.snakes_by_id
         
         if not is_alive: return 0 # lose!
         
