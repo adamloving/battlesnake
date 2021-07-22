@@ -90,12 +90,13 @@ class Board(object):
     # generate possible next boards
     def generate(self):
         boards = []
+        #print("---- GENERATE ----")
         combos = self.generate_pnp_combos()
         print(f"Combos: {len(combos)}")
 
         # resolve conflicts
         for combo in combos:
-            # print("--- START ---")
+            #print("--- START combo ---")
             new_board = Board(copy.deepcopy(self.board), self.you_id)
             # new_board.print()
             new_board.combo = combo
@@ -104,7 +105,8 @@ class Board(object):
                 p = pnp["position"]
                 current_snake = new_board.snakes_by_id[pnp["id"]]
                 occupant = new_board.matrix[p["x"]][p["y"]]
-
+                if pnp["id"] == new_board.you_id: new_board.you_move = pnp["move"]
+                
                 if occupant == " ":
                     #print(f"No occupant {p}")
                     new_board.move_snake(pnp["id"], p)
