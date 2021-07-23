@@ -12,11 +12,20 @@ class SnakeBrainTest(unittest.TestCase):
             self.data = json.load(f)
 
     def test_save_coefficients(self):
-        snake = SnakeBrain()
+        snake = SnakeBrain(self.data)
         snake.save_coefficients()
 
+    def test_hazard_scoring(self):
+        self.data["board"]["snakes"][0]["health"] = 10
+        self.data["you"]["health"] = 10
+        self.data["board"]["hazards"].append({"x": 4, "y": 10})
+        snake = SnakeBrain(self.data)
+        snake.print_board(self.data)
+        snake.get_move(self.data)
+
+
     def test_space_scoring(self):
-        snake = SnakeBrain()
+        snake = SnakeBrain(self.data)
         opponent = self.data["you"].copy()
         opponent["id"] = "opponent"
         opponent["head"] = {"x": 3, "y": 9}
@@ -28,14 +37,16 @@ class SnakeBrainTest(unittest.TestCase):
         self.data["board"]["snakes"].append(opponent)
         snake.print_board(self.data)
 
+        snake.get_move(self.data)
+
         choices = snake.score_choices_based_on_space(self.data, [
-            { "position": { "x": 3, "y": 10}},
-            { "position": { "x": 2, "y": 9 }}
+            { "move": "right", "position": { "x": 3, "y": 10}},
+            { "move": "down", "position": { "x": 2, "y": 9 }}
         ])
         print(f"{choices}")
 
     def test_hunt_scoring(self):
-        snake = SnakeBrain()
+        snake = SnakeBrain(self.data)
 
         # full health? always hunt regardless of distance
         self.assertGreaterEqual(snake.get_hunting_score(100, 1, 3), 0.95)
@@ -58,7 +69,8 @@ class SnakeBrainTest(unittest.TestCase):
         self.assertLessEqual(snake.get_hunting_score(100, 1, -3), 0.1)
 
     def test_food_scoring(self):
-        snake = SnakeBrain()
+        snake = SnakeBrain(self.data)
+        snake.print_board(self.data)
 
         # If I'm healthy, food doesn't matter (score == 0)
         self.assertEqual(snake.get_food_score(100, 5), 0)
@@ -77,7 +89,7 @@ class SnakeBrainTest(unittest.TestCase):
 
     # does it at least do something?
     def test_move(self):
-        snake = SnakeBrain()
+        snake = SnakeBrain(self.data)
         move = snake.get_move(self.data)
         self.assertIn(move, ["left", "right", "up", "down"])
 
@@ -95,7 +107,7 @@ class SnakeBrainTest(unittest.TestCase):
               self.data["board"]["snakes"] = [ self.data["you"] ]
               self.data["board"]["food"] = []
 
-              snake = SnakeBrain()
+              snake = SnakeBrain(self.data)
               move = snake.get_move(self.data)
 
               self.assertIn(move, ["left", "right", "up", "down"])
@@ -122,7 +134,7 @@ class SnakeBrainTest(unittest.TestCase):
         ]
         self.data["you"]["head"] = {"x": 1, "y": 1}
         self.data["board"]["snakes"][0] = self.data["you"]
-        snake = SnakeBrain()
+        snake = SnakeBrain(self.data)
         move = snake.get_move(self.data)
         self.assertEqual(move, "right")
 
@@ -140,7 +152,7 @@ class SnakeBrainTest(unittest.TestCase):
         opponent["body"] = [{"x": 1, "y": 0}]
 
         self.data["board"]["snakes"].append(opponent)
-        snake = SnakeBrain()
+        snake = SnakeBrain(self.data)
         move = snake.get_move(self.data)
         self.assertEqual(move, "up")
 
@@ -159,7 +171,7 @@ class SnakeBrainTest(unittest.TestCase):
 
         self.data["board"]["snakes"].append(opponent)
 
-        snake = SnakeBrain()
+        snake = SnakeBrain(self.data)
         snake.print_board(self.data)
         move = snake.get_move(self.data)
         self.assertEqual(move, "up")
@@ -178,7 +190,7 @@ class SnakeBrainTest(unittest.TestCase):
         opponent["body"] = [{"x": 4, "y": 3}]
         self.data["board"]["snakes"].append(opponent)
 
-        snake = SnakeBrain()
+        snake = SnakeBrain(self.data)
         move = snake.get_move(self.data)
         self.assertIn(move, ["left", "up", "down"])
 
@@ -190,7 +202,7 @@ class SnakeBrainTest(unittest.TestCase):
         self.data["board"]["hazards"].append({
             "x": 3, "y": 3
         })
-        snake = SnakeBrain()
+        snake = SnakeBrain(self.data)
         matrix = snake.print_board(self.data)
 
         self.assertEqual(matrix[7][5], "1")
@@ -199,14 +211,14 @@ class SnakeBrainTest(unittest.TestCase):
         self.assertEqual(matrix[3][3], "H")
 
     def test_seeks_food(self):
-        snake = SnakeBrain()
+        snake = SnakeBrain(self.data)
         snake.print_board(self.data)
         self.data["you"]["health"] = 20
         move = snake.get_move(self.data)
         self.assertEqual(move, "down")
 
     # def test_hunts_short_snake(self):
-    #     snake = SnakeBrain()
+    #     snake = SnakeBrain(self.data)
 
     #     # shorter snake right in front of me!
     #     self.data["board"]["snakes"].append({

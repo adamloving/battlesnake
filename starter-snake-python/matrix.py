@@ -25,7 +25,7 @@ class Matrix(object):
 
     def init_matrix(self):
         # initialize a list of lists
-        self.matrix = [[[None] * 6 for x in range(self.size)] for y in range(self.size)]
+        self.matrix = [[[None] * 3 for x in range(self.size)] for y in range(self.size)]
 
         for food in self.board["food"]:
           for p in self.board["food"]:
@@ -40,30 +40,25 @@ class Matrix(object):
             for p in snake["body"]:
                 self.at(p)[0] = f"S:{snake['id']}"
 
-        # self.fill_distance_around([self.p])
-        print("FF")
-        print(self.count_flood_fill(self.p))
+        print(f"init_matrix size: {self.size} p: {self.p}")
+        self.fill_distance_around([self.p])
+        self.count_flood_fill(self.p)
 
     # breadth first distance from p
     def fill_distance_around(self, q, depth = 0):
-        max_depth = depth
-        if len(q) == 0: return max_depth
+        if len(q) == 0: return 
         else:
             children = []
             for p in q:
                 self.at(p)[1] = depth       
                 neighbors = self.get_unvisited_neighbors(p, 1)
-                print(f"{depth} {max_depth} {p} {neighbors}")
+                # print(f"{depth} {p} {neighbors}")
                 for n in neighbors:
                     if not n in children: children.append(n)
 
-            max_depth = self.fill_distance_around(children, depth + 1)
-            # print(f"> {depth} {max_depth}")
-            # if depth > 0:
-            #     for p in q:
-            #         self.at(p)[2] = max_depth
+            self.fill_distance_around(children, depth + 1)
 
-            return max_depth
+            return
 
     # depth first max depth
     # bugbug: max depth not propagated down short branches 
@@ -138,3 +133,20 @@ class Matrix(object):
                 print(" | ", end='')
             print("")
         print("")
+
+    def get_distance_to(self, p):
+        dist = self.at(p)[1]
+        
+        # matrix not filled in for other snakes, so find distance to neighbor
+        if dist is None:
+            dist = 9999
+            for move in DIRECTIONS:
+                n = self.get_next_position(p, move)
+                if not self.is_on_board(n): continue            
+                dist = min(dist, self.at(n)[1] or 9999)
+            dist = dist + 1 
+        
+        return dist
+
+    def get_space_score(self, p):
+        return self.at(p)[2] / (self.size * self.size)

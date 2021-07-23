@@ -34,7 +34,7 @@ class Battlesnake(object):
         data = cherrypy.request.json
 
         # load last winner coefficients, mutate and save as current
-        snake = SnakeBrain("./files/last_winner.json")
+        snake = SnakeBrain(data, "./files/last_winner.json")
         snake.mutate_coefficients()
         snake.save_coefficients() # save as files/current.json
         print("START")
@@ -57,7 +57,7 @@ class Battlesnake(object):
         #possible_moves = ["up", "down", "left", "right"]
         #move = random.choice(possible_moves)
 
-        snake = SnakeBrain()
+        snake = SnakeBrain(data)
         move = snake.get_move(data)
 
 
@@ -79,10 +79,10 @@ class Battlesnake(object):
                 found = True
 
         if found:
-            snake = SnakeBrain()
+            snake = SnakeBrain(data)
             snake.save_coefficients("./files/last_winner.json")
             snake.save_coefficients(f'./archive/generation-{snake.coefficients["generation"]}.json')
-            print("END: alive")
+            print("END: alive!")
 
         print ("END")
         return "ok"

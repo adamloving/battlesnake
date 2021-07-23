@@ -1,8 +1,7 @@
 import json
 import random
 
-from board import Board
-from maximax import maximax;
+from matrix import Matrix
 
 class SnakeBrain(object):
 
@@ -12,10 +11,10 @@ class SnakeBrain(object):
       "hunting": 1,
       "hazard": 1,
       "space": 1,
-      "maximax": 1
     }
+    matrix_by_move = {}
 
-    def __init__(self, coefficient_file_name="./files/current.json"):
+    def __init__(self, data, coefficient_file_name="./files/current.json"):
       self.load_coefficients(coefficient_file_name)
       # print(f"Loaded: {self.coefficients}")
       return
@@ -53,15 +52,15 @@ class SnakeBrain(object):
                 "position": position,
                 "score": 1
               })
+              self.matrix_by_move[move] = Matrix(data["board"], position)
 
-      # print(f"Valid choices: {len(valid_choices)} {valid_choices}")
+      print(f"Valid choices: {len(valid_choices)} {valid_choices}")
 
       # (valid_choices and scored_choices are the same list)
       self.score_choices_based_on_food(data, valid_choices)
       self.score_choices_based_on_hunting(data, valid_choices)
       self.score_choices_based_on_space(data, valid_choices)
       self.score_choices_based_on_hazards(data, valid_choices)
-      self.score_choices_based_on_maximax(data, valid_choices)
 
       # average scores
       for choice in valid_choices:
@@ -70,8 +69,7 @@ class SnakeBrain(object):
           self.coefficients["hunting"] * choice["hunting_score"],
           self.coefficients["hazard"] * choice["hazard_score"],
           self.coefficients["space"] * choice["space_score"],
-          self.coefficients["maximax"] * choice["maximax_score"]
-        ]) / 5
+        ]) / 4
 
       # sort choices so best choice is first
       def by_score(choice):
@@ -79,7 +77,7 @@ class SnakeBrain(object):
       valid_choices.sort(key=by_score)
       valid_choices.reverse()
 
-      print(f"----- At {head_position} -----")
+      print(f"----- Turn {data['turn']} at {head_position} -----")
       for i, choice in enumerate(valid_choices):
         print(f"{i}: {choice}")
       print("-------------------------------")
@@ -92,18 +90,27 @@ class SnakeBrain(object):
         print("No valid moves")
         return None
 
-    def get_hazard_score(self, distance):
-        if distance == 0:
-          return 0
-        else:
-          return 1
+    # opposite of food score
+    def get_hazard_score(self, distance, health):
+        if health == 0: return 0 # avoid divide by 0
+        if distance == 0: return 0 # avoid divide by 0
+
+        # importance increases from 0 -> 1 as health decreases
+        importance = (100 - health) ** 4 / (100 ** 4)
+
+        # close = 1, far (10) = 0
+        proximity = 1 / distance
+
+        # bugbug: scale to 1 (normalize)
+        print(f"hazard? h={health} d={distance} i={importance} p={proximity} s={1-(importance*proximity)}")
+        return 1 - (importance * proximity)
 
     def score_choices_based_on_hazards(self, data, valid_choices):
       for choice in valid_choices:
         choice["hazard_score"] = 1
         for hazard in data["board"]["hazards"]:
-          distance = self.get_distance(choice["position"], hazard)
-          choice["hazard_score"] = self.get_hazard_score(distance)
+          distance = self.matrix_by_move[choice["move"]].get_distance_to(hazard)
+          choice["hazard_score"] = self.get_hazard_score(distance, data["you"]["health"])
 
     def score_choices_based_on_food(self, data, choices):
       # todo: what happens when no food on board?
@@ -113,7 +120,7 @@ class SnakeBrain(object):
       for choice in choices:
         choice["closest_food_distance"] = 9999999999
         for food in data["board"]["food"]:
-          distance = self.get_distance(choice["position"], food)
+          distance = self.matrix_by_move[choice["move"]].get_distance_to(food)
           if distance < choice["closest_food_distance"]:
             choice["closest_food_distance"] = distance
 
@@ -147,7 +154,7 @@ class SnakeBrain(object):
             ophp = self.get_next_position(opponent_head_position, direction)
             if self.is_on_board(ophp, size) and \
               self.is_open(ophp, data["board"]["snakes"]):
-              distance = self.get_distance(choice["position"], ophp)
+              distance = self.matrix_by_move[choice["move"]].get_distance_to(ophp)
               length = len(snake["body"])
               print(f"ophp: {ophp} {distance}")
               if distance < choice["closest_ophp_distance"]:
@@ -155,10 +162,9 @@ class SnakeBrain(object):
                 choice["closest_ophp_distance"] = distance
                 choice["closest_opponent_size"] = length
 
-      print(f"{choices}")
       for choice in choices:
         print(f"get_hunting_score for {choice['position']} d={choice['closest_ophp_distance']}")
-        if choice["closest_ophp_distance"] == 9999999999:
+        if choice["closest_ophp_distance"] >= 10:
           choice["hunting_score"] = 0
         else:
           choice["hunting_score"] = self.get_hunting_score(
@@ -181,11 +187,9 @@ class SnakeBrain(object):
         if length_delta > 0: # I'm longer
           # bugbug: not scaled to 1, skewed to hunt short snakes
           score = length_delta * importance * proximity # attack!
-        else: # I'm same or shorter (avoid a little bit)
-          if distance > 3:
-            return 0.5 # don't care
-          else:
-            score = 1 - (importance * proximity)
+        else: # I'm same or shorter (avoid)
+          length_delta = length_delta - 1 # So 0 becomes -1
+          score = 1 + (0.125 * length_delta * proximity)
 
         print(f"hunt? h={health} d={distance} ld={length_delta} i={importance} p={proximity} s={score}")
         return score
@@ -196,9 +200,7 @@ class SnakeBrain(object):
         if distance == 0: return 1 # avoid divide by 0
 
         # importance increases from 0 -> 1 as health decreases
-        # HACK
-        # importance = (100 - health) ** 4 / (100 ** 4)
-        importance = 1
+        importance = (100 - health) ** 4 / (100 ** 4)
 
         # close = 1, far = 0
         proximity = 1 / distance
@@ -289,36 +291,11 @@ class SnakeBrain(object):
       size = data["board"]["width"]
 
       for choice in choices:
-        open_count = 0
-        position = choice["position"]
-        for x in range(position["x"] - 3, position["x"] + 4):
-          if x < 0 or x >= size: continue
-          for y in range(position["y"] - 3, position["y"] + 4):
-            if y < 0 or y >= size: continue
-            space_position = { "x": x, "y": y}
-            if self.is_open(space_position, data["board"]["snakes"]):
-              if self.is_hazard(data, space_position):
-                open_count += 0.5
-              else:
-                open_count += 1
-
-        # print(f"open_count: {open_count}")
-        choice["space_score"] = open_count / 49 # evaluating 7x7 grid
+        choice["space_score"] = \
+          self.matrix_by_move[choice["move"]].get_space_score(choice["position"]) 
 
       return choices
 
     def is_hazard(self, data, position):
-      for hazard in data["board"]["hazards"]:
-        if position["x"] == hazard["x"] and position["y"] == hazard["y"]:
-          return True
-      return False
+      return position in data["board"]["hazards"]
 
-    def score_choices_based_on_maximax(self, data, choices):
-      board = Board(data["board"], data["you"]["id"])
-      [ best_move, score, score_by_move] = maximax(board, 3) # score is average delta
-      print(f"maximax_choice: {best_move} {score}")
-
-      for choice in choices:
-        choice["maximax_score"] = score_by_move.get(choice["move"], 0)
-        
-      return choices
