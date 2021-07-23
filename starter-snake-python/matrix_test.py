@@ -11,7 +11,7 @@ class MatrixTest(unittest.TestCase):
             self.data = json.load(f)
 
     def test_creation(self):
-        m = Matrix(self.data["board"], {"x": 0, "y": 2})
+        m = Matrix(self.data["board"], {"x": 1, "y": 2})
         m.print()
         m.print(1) # distance
         m.print(2) # space

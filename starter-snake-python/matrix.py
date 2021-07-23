@@ -41,7 +41,7 @@ class Matrix(object):
                 self.at(p)[0] = f"S:{snake['id']}"
 
         # self.fill_distance_around([self.p])
-        self.fill_max_depth(self.p)
+        self.count_flood_fill(self.p)
 
     # breadth first distance from p
     def fill_distance_around(self, q, depth = 0):
@@ -64,32 +64,24 @@ class Matrix(object):
 
             return max_depth
 
-    # depth first max dep
-    def fill_max_depth(self, p, visited = [], depth = 0):
-        visited.append(p)
-        neighbors = self.get_neighbors(p)
-        neighbors = [n for n in neighbors if n not in visited]
-        print(f"{depth} {p} {neighbors}")
-        if len(neighbors) == 0:            
-            self.at(p)[2] = depth
-            return
-        else:
-            for n in neighbors:
-                self.fill_max_depth(n, visited, depth + 1)
+    # depth first max depth
+    # bugbug: max depth not propagated down short branches 
+    # (or neighboring space may be part of separate short branches)
+    def count_flood_fill(self, p):
+        count = 0
+        if not self.is_on_board(p): return count
+        if self.at(p)[2] is not None: return count
+        if self.is_occupied(p): return count
 
-            for n in self.get_neighbors(p):    
-                self.at(p)[2] = max(self.at(p)[2] or 0, self.at(n)[2] or 0)
-            
-            return
+        count = 1
+        self.at(p)[2] = count
+        count += self.count_flood_fill({"x": p["x"] - 1, "y": p["y"] })
+        count += self.count_flood_fill({"x": p["x"] + 1, "y": p["y"] })
+        count += self.count_flood_fill({"x": p["x"], "y": p["y"] - 1})
+        count += self.count_flood_fill({"x": p["x"], "y": p["y"] + 1})
 
-    def get_neighbors(self, p):
-        open_neighbors = []
-        for move in DIRECTIONS:
-            n = self.get_next_position(p, move)
-            if not self.is_on_board(n): continue
-            if self.is_occupied(n): continue
-            open_neighbors.append(n)
-        return open_neighbors
+        self.at(p)[2] = count
+        return count
 
     def get_unvisited_neighbors(self, p, dimension = 1):
         open_neighbors = []
