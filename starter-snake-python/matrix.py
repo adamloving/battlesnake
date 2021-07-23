@@ -41,7 +41,8 @@ class Matrix(object):
                 self.at(p)[0] = f"S:{snake['id']}"
 
         # self.fill_distance_around([self.p])
-        self.count_flood_fill(self.p)
+        print("FF")
+        print(self.count_flood_fill(self.p))
 
     # breadth first distance from p
     def fill_distance_around(self, q, depth = 0):
@@ -68,20 +69,19 @@ class Matrix(object):
     # bugbug: max depth not propagated down short branches 
     # (or neighboring space may be part of separate short branches)
     def count_flood_fill(self, p):
-        count = 0
-        if not self.is_on_board(p): return count
-        if self.at(p)[2] is not None: return count
-        if self.is_occupied(p): return count
+        if not self.is_on_board(p): return str({})
+        if self.at(p)[2] is not None: return str({})
+        if self.is_occupied(p): return str({})
 
-        count = 1
-        self.at(p)[2] = count
-        count += self.count_flood_fill({"x": p["x"] - 1, "y": p["y"] })
-        count += self.count_flood_fill({"x": p["x"] + 1, "y": p["y"] })
-        count += self.count_flood_fill({"x": p["x"], "y": p["y"] - 1})
-        count += self.count_flood_fill({"x": p["x"], "y": p["y"] + 1})
+        spaces = {str(p)} # string is hashable
+        self.at(p)[2] = 1
+        spaces = spaces.union(self.count_flood_fill({"x": p["x"] - 1, "y": p["y"] }))
+        spaces = spaces.union(self.count_flood_fill({"x": p["x"] + 1, "y": p["y"] }))
+        spaces = spaces.union(self.count_flood_fill({"x": p["x"], "y": p["y"] - 1}))
+        spaces = spaces.union(self.count_flood_fill({"x": p["x"], "y": p["y"] + 1}))
 
-        self.at(p)[2] = count
-        return count
+        self.at(p)[2] = len(spaces)
+        return spaces
 
     def get_unvisited_neighbors(self, p, dimension = 1):
         open_neighbors = []
