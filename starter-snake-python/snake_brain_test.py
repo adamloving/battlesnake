@@ -35,7 +35,11 @@ class SnakeBrainTest(unittest.TestCase):
     def test_hazard_scoring(self):
         self.data["board"]["snakes"][0]["health"] = 10
         self.data["you"]["health"] = 20
-        self.data["board"]["hazards"].append({"x": 4, "y": 10})
+
+        for i in range(0, 11):
+            self.data["board"]["hazards"].append({"x": i, "y": 10}) # top
+            self.data["board"]["hazards"].append({"x": 0, "y": i}) # left
+
         snake = SnakeBrain(self.data)
         snake.print_board(self.data)
         snake.get_move(self.data)

@@ -101,7 +101,8 @@ class SnakeBrain(object):
         # https://www.desmos.com/calculator/ho1ztpfcp0
 
         # close = 1, far (10) = 0
-        proximity = 1 / distance
+        proximity = 1 / (distance ** 0.6)
+        # https://www.desmos.com/calculator/yubw6ioyi8
 
         # bugbug: scale to 1 (normalize)
         print(f"hazard? h={health} d={distance} i={importance} p={proximity} s={1-(importance*proximity)}")
@@ -109,10 +110,16 @@ class SnakeBrain(object):
 
     def score_choices_based_on_hazards(self, data, valid_choices):
       for choice in valid_choices:
+        matrix = self.matrix_by_move[choice["move"]]
+        distance = 99999
         choice["hazard_score"] = 1
         for hazard in data["board"]["hazards"]:
-          distance = self.matrix_by_move[choice["move"]].get_distance_to(hazard)
-          choice["hazard_score"] = self.get_hazard_score(distance, data["you"]["health"])
+          distance = min(distance,
+            matrix.get_distance_to(hazard)
+          )
+
+        # calc based on nearest hazard
+        choice["hazard_score"] = self.get_hazard_score(distance, data["you"]["health"])
 
     def score_choices_based_on_food(self, data, choices):
       # todo: what happens when no food on board?
@@ -257,13 +264,6 @@ class SnakeBrain(object):
         # initialize a list of lists
         matrix = [[" " for x in range(size)] for y in range(size)]
 
-        # mark where the snakes are
-        snake_number = 0
-        for snake in data["board"]["snakes"]:
-            for body_position in snake["body"]:
-                matrix[body_position["x"]][body_position["y"]] = str(snake_number)
-            snake_number += 1
-
         # This should mark the food in the board
         # This passes the checker, but I don't know how to get print the board so I can see if it actually works
         snake_number = "F"
@@ -278,6 +278,13 @@ class SnakeBrain(object):
           for hazard_position in data["board"]["hazards"]:
             matrix[hazard_position["x"]][hazard_position["y"]] = str(snake_number)
 
+        # mark where the snakes are
+        snake_number = 0
+        for snake in data["board"]["snakes"]:
+            for body_position in snake["body"]:
+                matrix[body_position["x"]][body_position["y"]] = str(snake_number)
+            snake_number += 1
+
         # print it out
         print("")
         for y in reversed(range(size)):
@@ -291,8 +298,6 @@ class SnakeBrain(object):
         return matrix
 
     def score_choices_based_on_space(self, data, choices):
-      size = data["board"]["width"]
-
       for choice in choices:
         choice["space_score"] = \
           self.matrix_by_move[choice["move"]].get_space_score(choice["position"])
