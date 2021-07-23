@@ -1,0 +1,128 @@
+{
+    "game": {
+        "id": "matrix-test",
+        "ruleset": {
+            "name": "solo",
+            "version": "v1.0.17"
+        },
+        "timeout": 500
+    },
+    "turn": 2,
+    "board": {
+        "height": 5,
+        "width": 5,
+        "snakes": [
+            {
+                "id": "1",
+                "name": "Drake",
+                "latency": "221",
+                "health": 98,
+                "body": [
+                    {
+                        "x": 0,
+                        "y": 0
+                    },
+                    {
+                        "x": 0,
+                        "y": 1
+                    },
+                    {
+                        "x": 0,
+                        "y": 2
+                    }
+                ],
+                "head": {
+                    "x": 0,
+                    "y": 2
+                },
+                "length": 3,
+                "shout": ""
+            },{
+                "id": "2",
+                "name": "Two",
+                "latency": "221",
+                "health": 98,
+                "body": [
+                    {
+                        "x": 1,
+                        "y": 3
+                    },
+                    {
+                        "x": 1,
+                        "y": 4
+                    }
+                ],
+                "head": {
+                    "x": 1,
+                    "y": 3
+                },
+                "length": 2,
+                "shout": ""
+            },{
+                "id": "3",
+                "name": "Three",
+                "latency": "221",
+                "health": 98,
+                "body": [
+                    {
+                        "x": 3,
+                        "y": 3
+                    },
+                    {
+                        "x": 3,
+                        "y": 2
+                    },
+                    {
+                        "x": 3,
+                        "y": 1
+                    }, {
+                        "x": 3,
+                        "y": 0
+                    }
+                ],
+                "head": {
+                    "x": 3,
+                    "y": 3
+                },
+                "length": 4,
+                "shout": ""
+            }
+        ],
+        "food": [
+            {
+                "x": 3,
+                "y": 4
+            }
+        ],
+        "hazards": [{
+            "x": 4,
+            "y": 1
+        }]
+    },
+    "you": {
+        "id": "1",
+        "name": "Drake",
+        "latency": "221",
+        "health": 98,
+        "body": [
+            {
+                "x": 0,
+                "y": 0
+            },
+            {
+                "x": 0,
+                "y": 1
+            },
+            {
+                "x": 0,
+                "y": 2
+            }
+        ],
+        "head": {
+            "x": 0,
+            "y": 2
+        },
+        "length": 3,
+        "shout": ""
+    }
+}
