@@ -86,7 +86,7 @@ class SnakeBrain(object):
       if len(valid_choices) > 0:
         best_choice = valid_choices[0]
         return best_choice["move"]
-      else: 
+      else:
         print("No valid moves")
         return None
 
@@ -95,8 +95,10 @@ class SnakeBrain(object):
         if health == 0: return 0 # avoid divide by 0
         if distance == 0: return 0 # avoid divide by 0
 
-        # importance increases from 0 -> 1 as health decreases
-        importance = (100 - health) ** 4 / (100 ** 4)
+        # importance increases from 0 -> 1 as health decreases (reaches 1 at 30 health)
+        importance = (100 - health + 30) ** 4 / (100 ** 4)
+        importance = max(min(1, importance), 0)
+        # https://www.desmos.com/calculator/ho1ztpfcp0
 
         # close = 1, far (10) = 0
         proximity = 1 / distance
@@ -156,9 +158,9 @@ class SnakeBrain(object):
               self.is_open(ophp, data["board"]["snakes"]):
               distance = self.matrix_by_move[choice["move"]].get_distance_to(ophp)
               length = len(snake["body"])
-              print(f"ophp: {ophp} {distance}")
+              # if distanceprint(f"ophp: {ophp} {distance}")
               if distance < choice["closest_ophp_distance"]:
-                print(f"found: {distance} {length}")
+                print(f"nearest opponent: d={distance} l={length}")
                 choice["closest_ophp_distance"] = distance
                 choice["closest_opponent_size"] = length
 
@@ -181,15 +183,16 @@ class SnakeBrain(object):
         # full health = 1 -> 0 no health, no hunt
         importance = 1 - (2.72 ** (- health / 20))
 
-        # close = 1, far (10) = 0
-        proximity = (-1 / 100) * (distance ** 2) + 1
+        distance = min(5, distance) # max 5 distance for formula
+
+        # close = 1, far (5) = 0
+        proximity = (5 - distance + 1) ** 2 / (5 ** 2)
+        # https://www.desmos.com/calculator/ho1ztpfcp0
 
         if length_delta > 0: # I'm longer
-          # bugbug: not scaled to 1, skewed to hunt short snakes
-          score = length_delta * importance * proximity # attack!
+          score = importance * proximity # attack!
         else: # I'm same or shorter (avoid)
-          length_delta = length_delta - 1 # So 0 becomes -1
-          score = 1 + (0.125 * length_delta * proximity)
+          score = 1 - proximity
 
         print(f"hunt? h={health} d={distance} ld={length_delta} i={importance} p={proximity} s={score}")
         return score
@@ -292,7 +295,7 @@ class SnakeBrain(object):
 
       for choice in choices:
         choice["space_score"] = \
-          self.matrix_by_move[choice["move"]].get_space_score(choice["position"]) 
+          self.matrix_by_move[choice["move"]].get_space_score(choice["position"])
 
       return choices
 

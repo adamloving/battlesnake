@@ -15,14 +15,30 @@ class SnakeBrainTest(unittest.TestCase):
         snake = SnakeBrain(self.data)
         snake.save_coefficients()
 
-    def test_hazard_scoring(self):
+    def test_get_hazard_score(self):
         self.data["board"]["snakes"][0]["health"] = 10
         self.data["you"]["health"] = 10
         self.data["board"]["hazards"].append({"x": 4, "y": 10})
         snake = SnakeBrain(self.data)
         snake.print_board(self.data)
-        snake.get_move(self.data)
 
+        # far away, good health == 1
+        self.assertAlmostEqual(snake.get_hazard_score(10, 100), 1, 1)
+
+        # nearby, bad health = 0
+        self.assertAlmostEqual(snake.get_hazard_score(0, 10), 0, 1)
+        self.assertAlmostEqual(snake.get_hazard_score(1, 10), 0, 1)
+
+        # nearby, good health = 0.5
+        self.assertAlmostEqual(snake.get_hazard_score(1, 80), 0.9, 1)
+
+    def test_hazard_scoring(self):
+        self.data["board"]["snakes"][0]["health"] = 10
+        self.data["you"]["health"] = 20
+        self.data["board"]["hazards"].append({"x": 4, "y": 10})
+        snake = SnakeBrain(self.data)
+        snake.print_board(self.data)
+        snake.get_move(self.data)
 
     def test_space_scoring(self):
         snake = SnakeBrain(self.data)
@@ -50,7 +66,7 @@ class SnakeBrainTest(unittest.TestCase):
 
         # full health? always hunt regardless of distance
         self.assertGreaterEqual(snake.get_hunting_score(100, 1, 3), 0.95)
-        self.assertGreaterEqual(snake.get_hunting_score(100, 5, 3), .5)
+        self.assertLessEqual(snake.get_hunting_score(100, 3, 3), .5)
         self.assertLessEqual(snake.get_hunting_score(100, 10, 3), 0.1)
 
         # half health and close? hunt!
@@ -64,9 +80,10 @@ class SnakeBrainTest(unittest.TestCase):
         self.assertGreaterEqual(snake.get_hunting_score(25, 1, 2), 0.7)
 
         # avoid longer snakes
-        self.assertGreaterEqual(snake.get_hunting_score(25, 1, -1), 0)
-        self.assertGreaterEqual(snake.get_hunting_score(25, 3, -3), 0)
-        self.assertLessEqual(snake.get_hunting_score(100, 1, -3), 0.1)
+        self.assertLessEqual(snake.get_hunting_score(100, 3, -3),   0.70) # 3 away, 3 longer
+        self.assertLessEqual(snake.get_hunting_score(100, 2, -3),   0.40) # 2 away, 3 longer
+        self.assertAlmostEqual(snake.get_hunting_score(100, 1, -1), 0, 1) # 1 away, 1 longer
+        self.assertAlmostEqual(snake.get_hunting_score(100, 1, -3), 0, 1) # 1 away, 3 longer
 
     def test_food_scoring(self):
         snake = SnakeBrain(self.data)

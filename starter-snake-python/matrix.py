@@ -40,17 +40,17 @@ class Matrix(object):
             for p in snake["body"]:
                 self.at(p)[0] = f"S:{snake['id']}"
 
-        print(f"init_matrix size: {self.size} p: {self.p}")
+        # print(f"init_matrix size: {self.size} p: {self.p}")
         self.fill_distance_around([self.p])
         self.count_flood_fill(self.p)
 
     # breadth first distance from p
     def fill_distance_around(self, q, depth = 0):
-        if len(q) == 0: return 
+        if len(q) == 0: return
         else:
             children = []
             for p in q:
-                self.at(p)[1] = depth       
+                self.at(p)[1] = depth
                 neighbors = self.get_unvisited_neighbors(p, 1)
                 # print(f"{depth} {p} {neighbors}")
                 for n in neighbors:
@@ -61,7 +61,7 @@ class Matrix(object):
             return
 
     # depth first max depth
-    # bugbug: max depth not propagated down short branches 
+    # bugbug: max depth not propagated down short branches
     # (or neighboring space may be part of separate short branches)
     def count_flood_fill(self, p):
         if not self.is_on_board(p): return str({})
@@ -136,17 +136,20 @@ class Matrix(object):
 
     def get_distance_to(self, p):
         dist = self.at(p)[1]
-        
+
         # matrix not filled in for other snakes, so find distance to neighbor
         if dist is None:
             dist = 9999
             for move in DIRECTIONS:
                 n = self.get_next_position(p, move)
-                if not self.is_on_board(n): continue            
+                if not self.is_on_board(n): continue
                 dist = min(dist, self.at(n)[1] or 9999)
-            dist = dist + 1 
-        
+            dist = dist + 1
+
         return dist
 
     def get_space_score(self, p):
-        return self.at(p)[2] / (self.size * self.size)
+        score = self.at(p)[2] / (self.size ** 2)
+        score = max(min(1, score), 0)
+        print(f"space? {self.at(p)[2]} / {self.size ** 2} = {score}")
+        return score
