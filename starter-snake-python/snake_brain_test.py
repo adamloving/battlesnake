@@ -238,6 +238,18 @@ class SnakeBrainTest(unittest.TestCase):
         move = snake.get_move(self.data)
         self.assertEqual(move, "down")
 
+    def test_head_to_head_food(self):
+        # shorter snake should never attack larger
+        with open('fixtures/head_to_head_food.json') as f:
+            self.data = json.load(f)
+        snake = SnakeBrain(self.data)
+        snake.print_board(self.data)
+        move = snake.get_move(self.data)
+        # print(move)
+
+
+
+
     # def test_hunts_short_snake(self):
     #     snake = SnakeBrain(self.data)
 
