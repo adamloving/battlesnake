@@ -110,13 +110,12 @@ class SnakeBrain(object):
 
     def score_choices_based_on_hazards(self, data, valid_choices):
       for choice in valid_choices:
-        matrix = self.matrix_by_move[choice["move"]]
         distance = 99999
         choice["hazard_score"] = 1
         for hazard in data["board"]["hazards"]:
-          distance = min(distance,
-            matrix.get_distance_to(hazard)
-          )
+          # don't use the matrix, because our body might be in it
+          distance = min(distance, self.get_distance(choice["position"], hazard))
+          # print(f"{choice['position']} {self.get_distance(choice['position'], hazard)} {hazard}")
 
         # calc based on nearest hazard
         choice["hazard_score"] = self.get_hazard_score(distance, data["you"]["health"])
