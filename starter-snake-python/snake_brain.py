@@ -96,11 +96,14 @@ class SnakeBrain(object):
         good_choices = []
       
         for choice in choices:
-          # other snakes and hunting score = 0 means we're going to die
-          if len(data["board"]["snakes"]) > 1 and choice["hunting_score"] == 0: continue
-
+          # bugbug: we might filter multiple bad choices here
+          if len(data["board"]["snakes"]) > 1 and \
+              choice['closest_ophp_distance'] == 0 and \
+              choice['closest_opponent_size'] >= data["you"]["length"]: continue
           good_choices.append(choice)
 
+        # no good choices!
+        if len(good_choices) == 0: good_choices = choices 
         return good_choices
 
     # opposite of food score
@@ -204,8 +207,8 @@ class SnakeBrain(object):
 
         distance = min(5, distance) # max 5 distance for formula
 
-        # close = 1, far (5) = 0
-        proximity = (5 - distance) ** 2 / (5 ** 2)
+        # close (1) = 1, far (5) = 0
+        proximity = (5 - distance + 1) ** 2 / (5 ** 2)
         # https://www.desmos.com/calculator/ho1ztpfcp0
 
         if length_delta > 0: # I'm longer
