@@ -71,6 +71,8 @@ class SnakeBrain(object):
           self.coefficients["space"] * choice["space_score"],
         ]) / 4
 
+      valid_choices = self.apply_filter_rules(data, valid_choices)
+
       # sort choices so best choice is first
       def by_score(choice):
         return choice["score"]
@@ -79,7 +81,7 @@ class SnakeBrain(object):
 
       print(f"----- Turn {data['turn']} at {head_position} -----")
       for i, choice in enumerate(valid_choices):
-        print(f"{i}: {choice}")
+        print(f"{i}: {self.choice_to_string(choice)}")
       print("-------------------------------")
 
       # print(f"sorted choices: {scored_choices}")
@@ -89,6 +91,20 @@ class SnakeBrain(object):
       else:
         print("No valid moves")
         return None
+
+    def apply_filter_rules(self, data, choices):
+        good_choices = []
+      
+        for choice in choices:
+          # bugbug: we might filter multiple bad choices here
+          if len(data["board"]["snakes"]) > 1 and \
+              choice['closest_ophp_distance'] == 0 and \
+              choice['closest_opponent_size'] >= data["you"]["length"]: continue
+          good_choices.append(choice)
+
+        # no good choices!
+        if len(good_choices) == 0: good_choices = choices 
+        return good_choices
 
     # opposite of food score
     def get_hazard_score(self, distance, health):
@@ -100,8 +116,8 @@ class SnakeBrain(object):
         importance = max(min(1, importance), 0)
         # https://www.desmos.com/calculator/ho1ztpfcp0
 
-        # close = 1, far (10) = 0
-        proximity = 1 / (distance ** 0.6)
+        # close (0) = 1, far (10) = 0
+        proximity = 1 / ((distance + 1) ** 2)
         # https://www.desmos.com/calculator/yubw6ioyi8
 
         # bugbug: scale to 1 (normalize)
@@ -110,13 +126,12 @@ class SnakeBrain(object):
 
     def score_choices_based_on_hazards(self, data, valid_choices):
       for choice in valid_choices:
-        matrix = self.matrix_by_move[choice["move"]]
         distance = 99999
         choice["hazard_score"] = 1
         for hazard in data["board"]["hazards"]:
-          distance = min(distance,
-            matrix.get_distance_to(hazard)
-          )
+          # don't use the matrix, because our body might be in it
+          distance = min(distance, self.get_distance(choice["position"], hazard))
+          # print(f"{choice['position']} {self.get_distance(choice['position'], hazard)} {hazard}")
 
         # calc based on nearest hazard
         choice["hazard_score"] = self.get_hazard_score(distance, data["you"]["health"])
@@ -133,7 +148,7 @@ class SnakeBrain(object):
           if distance < choice["closest_food_distance"]:
             choice["closest_food_distance"] = distance
 
-      # for all choices, find the one closes to food
+      # for all choices, find the one closest to food
       closest_food_distance = 99999999999
       for choice in choices:
         if choice["closest_food_distance"] < closest_food_distance:
@@ -141,7 +156,7 @@ class SnakeBrain(object):
 
       # based on how hungry we are, increment score for choice based to food
       for choice in choices:
-        choice["food_score"] = self.get_food_score(health, choice["closest_food_distance"])
+        choice["food_score"] = self.get_food_score(health, choice["closest_food_distance"], data["turn"])
 
       return choices
 
@@ -171,8 +186,7 @@ class SnakeBrain(object):
                 choice["closest_ophp_distance"] = distance
                 choice["closest_opponent_size"] = length
 
-      for choice in choices:
-        print(f"get_hunting_score for {choice['position']} d={choice['closest_ophp_distance']}")
+      for choice in choices:        
         if choice["closest_ophp_distance"] >= 10:
           choice["hunting_score"] = 0
         else:
@@ -181,6 +195,7 @@ class SnakeBrain(object):
             choice["closest_ophp_distance"],
             my_length - choice["closest_opponent_size"]
           )
+        print(f"get_hunting_score for {choice['position']} d={choice['closest_ophp_distance']} s={round(choice['hunting_score'], 5)}")
 
       return choices
 
@@ -192,7 +207,7 @@ class SnakeBrain(object):
 
         distance = min(5, distance) # max 5 distance for formula
 
-        # close = 1, far (5) = 0
+        # close (1) = 1, far (5) = 0
         proximity = (5 - distance + 1) ** 2 / (5 ** 2)
         # https://www.desmos.com/calculator/ho1ztpfcp0
 
@@ -205,17 +220,21 @@ class SnakeBrain(object):
         return score
 
     # returns 1 if should go towards food, 0 if should ignore
-    def get_food_score(self, health, distance):
+    def get_food_score(self, health, distance, turn):
         if health == 0: return 0 # avoid divide by 0
         if distance == 0: return 1 # avoid divide by 0
+
+        # each turn costs 1 health. to aggressively go after food for first 50 turns,
+        # use turn as health (start hungry, and back off)
+        if turn <= 50: health = turn
 
         # importance increases from 0 -> 1 as health decreases
         importance = (100 - health) ** 4 / (100 ** 4)
 
         # close = 1, far = 0
-        proximity = 1 / distance
+        proximity = 1 / distance # should 
 
-        print(f"eat? h={health} d={distance} i={importance} p={proximity} s={round(importance*proximity, 10)}")
+        print(f"eat? t={turn} h={health} d={distance} i={importance} p={proximity} s={round(importance*proximity, 5)}")
         return importance * proximity
 
     def get_distance(self, p1, p2):
@@ -307,3 +326,10 @@ class SnakeBrain(object):
     def is_hazard(self, data, position):
       return position in data["board"]["hazards"]
 
+    def choice_to_string(self, c):
+      return f"m:{c['move']} {c['position']['x']},{c['position']['y']} " + \
+        f"s:{round(c['score'], 5)} " + \
+        f"food: {round(c['food_score'], 5)} " + \
+        f"hunting: {round(c['hunting_score'], 5)} " + \
+        f"space: {round(c['space_score'], 5)} " + \
+        f"hazard: {round(c['hazard_score'], 5)}"
