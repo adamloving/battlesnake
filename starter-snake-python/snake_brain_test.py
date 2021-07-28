@@ -15,6 +15,13 @@ class SnakeBrainTest(unittest.TestCase):
         snake = SnakeBrain(self.data)
         snake.save_coefficients()
 
+    def test_why_right(self):
+        with open('fixtures/why_right.json') as f:
+            self.data = json.load(f)
+        snake = SnakeBrain(self.data)
+        snake.print_board(self.data)
+        print(snake.get_move(self.data))
+
     def test_get_hazard_score(self):
         self.data["board"]["snakes"][0]["health"] = 10
         self.data["you"]["health"] = 10
