@@ -138,6 +138,14 @@ class SnakeBrain(object):
         # calc based on nearest hazard
         choice["hazard_score"] = self.get_hazard_score(distance, data["you"]["health"])
 
+        # HACK: in hazard, further from edge is better
+        if choice["hazard_score"] == 0:
+          print("Hazard hack")
+          size = data["board"]["width"]
+          p = choice["position"] 
+          # interior scores higher than edges
+          choice["hazard_score"] = 0.1 * min(p["x"], size - p["x"], p["y"], size - p["y"]) 
+          
     def score_choices_based_on_food(self, data, choices):
       # todo: what happens when no food on board?
       health = data["you"]["health"]
