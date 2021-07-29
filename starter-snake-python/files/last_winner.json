@@ -3,5 +3,6 @@
   "hunting": 0.9,
   "hazard": 0.8,
   "space": 1.0,
-  "maximax": 1.0
+  "maximax": 1.0,
+  "avoiding": 1.0
 }

@@ -136,7 +136,6 @@ class Matrix(object):
 
     def get_distance_to(self, p):
         dist = self.at(p)[1]
-        print(f"dist={dist} to {p}")
 
         # matrix not filled in for other snakes, so find distance to neighbor
         if dist is None:
@@ -145,7 +144,6 @@ class Matrix(object):
                 n = self.get_next_position(p, move)
                 if not self.is_on_board(n): continue
                 dist = min(dist, self.at(n)[1] or 9999)
-                print(f"approx dist={n} {dist} ")
             dist = dist + 1
 
         return dist

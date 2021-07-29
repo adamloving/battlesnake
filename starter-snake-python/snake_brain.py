@@ -11,6 +11,7 @@ class SnakeBrain(object):
       "hunting": 1,
       "hazard": 1,
       "space": 1,
+      "avoiding": 1
     }
     matrix_by_move = {}
 
@@ -59,6 +60,7 @@ class SnakeBrain(object):
       # (valid_choices and scored_choices are the same list)
       self.score_choices_based_on_food(data, valid_choices)
       self.score_choices_based_on_hunting(data, valid_choices)
+      self.score_choices_based_on_avoiding(data, valid_choices)
       self.score_choices_based_on_space(data, valid_choices)
       self.score_choices_based_on_hazards(data, valid_choices)
 
@@ -67,9 +69,10 @@ class SnakeBrain(object):
         choice["score"] = sum([
           self.coefficients["food"] * choice["food_score"],
           self.coefficients["hunting"] * choice["hunting_score"],
+          self.coefficients["avoiding"] * choice["avoiding_score"],
           self.coefficients["hazard"] * choice["hazard_score"],
           self.coefficients["space"] * choice["space_score"],
-        ]) / 4
+        ]) / 5
 
       valid_choices = self.apply_filter_rules(data, valid_choices)
 
@@ -166,59 +169,96 @@ class SnakeBrain(object):
       health = data["you"]["health"]
       size = data["board"]["width"]
 
-      # bug: don't score distance to shorter snake compared to longer snake
       for choice in choices:
-        # opponent_possible_head_position
+        # find nearest prey_possible_head_position for smaller snakes
+        choice["closest_pphp_distance"] = 9999999999
+        choice["closest_prey_size"] = 9999999999
+        for snake in data["board"]["snakes"]:
+          if snake["id"] == my_id: continue
+          if snake["length"] >= my_length: continue
+          prey_head_position = snake["head"]
+          for direction in ["up", "down", "left", "right"]:
+            pphp = self.get_next_position(prey_head_position, direction)
+            if self.is_on_board(pphp, size) and \
+              self.is_open(pphp, data["board"]["snakes"]):
+              distance = self.matrix_by_move[choice["move"]].get_distance_to(pphp)
+              # print(f"pphp: {pphp} {distance}")
+              if distance < choice["closest_pphp_distance"]:
+                # print(f"nearest prey: d={distance} l={snake['length']}")
+                choice["closest_pphp_distance"] = distance
+
+      for choice in choices:
+        if choice["closest_pphp_distance"] >= 10:
+          choice["hunting_score"] = 0
+        else:
+          choice["hunting_score"] = self.get_hunting_score(
+            health,
+            choice["closest_pphp_distance"]
+          )
+        # print(f"get_hunting_score for {choice['position']} d={choice['closest_pphp_distance']} s={round(choice['hunting_score'], 5)}")
+
+      return choices
+
+    def score_choices_based_on_avoiding(self, data, choices):
+      my_id = data["you"]["id"]
+      my_length = data["you"]["length"]
+      size = data["board"]["width"]
+
+      for choice in choices:
+        # find nearest opponent_possible_head_position for smaller snakes
         choice["closest_ophp_distance"] = 9999999999
         choice["closest_opponent_size"] = 9999999999
         for snake in data["board"]["snakes"]:
-          if snake["id"] == my_id:
-            continue
+          if snake["id"] == my_id: continue
+          if snake["length"] < my_length: continue
           opponent_head_position = snake["head"]
           for direction in ["up", "down", "left", "right"]:
             ophp = self.get_next_position(opponent_head_position, direction)
             if self.is_on_board(ophp, size) and \
               self.is_open(ophp, data["board"]["snakes"]):
               distance = self.matrix_by_move[choice["move"]].get_distance_to(ophp)
-              length = len(snake["body"])
               # if distanceprint(f"ophp: {ophp} {distance}")
               if distance < choice["closest_ophp_distance"]:
-                print(f"nearest opponent: d={distance} l={length}")
+                # print(f"nearest opponent: d={distance} l={snake['length']}")
                 choice["closest_ophp_distance"] = distance
-                choice["closest_opponent_size"] = length
 
       for choice in choices:
         if choice["closest_ophp_distance"] >= 10:
-          choice["hunting_score"] = 0
+          choice["avoiding_score"] = 1
         else:
-          choice["hunting_score"] = self.get_hunting_score(
-            health,
-            choice["closest_ophp_distance"],
-            my_length - choice["closest_opponent_size"]
+          choice["avoiding_score"] = self.get_avoiding_score(
+            choice["closest_ophp_distance"]
           )
-        print(f"get_hunting_score for {choice['position']} d={choice['closest_ophp_distance']} s={round(choice['hunting_score'], 5)}")
+        # print(f"get_avoiding_score for {choice['position']} d={choice['closest_ophp_distance']} s={round(choice['avoiding_score'], 5)}")
 
       return choices
 
     # distance input should be distance to nearest _potential_ next head
-    # (otherwise use score = 1)
-    def get_hunting_score(self, health, distance, length_delta):
+    def get_hunting_score(self, health, distance):
         # full health = 1 -> 0 no health, no hunt
         importance = 1 - (2.72 ** (- health / 20))
 
+        # close (0) = 1 good, far (5) = 0 bad
         distance = min(5, distance) # max 5 distance for formula
-
-        # close (1) = 1, far (5) = 0
-        proximity = (5 - distance + 1) ** 2 / (5 ** 2)
+        proximity = (5 - distance) ** 2 / (5 ** 2)
         # https://www.desmos.com/calculator/ho1ztpfcp0
 
-        if length_delta > 0: # I'm longer
-          score = importance * proximity # attack!
-        else: # I'm same or shorter (avoid)
-          score = 1 - proximity
+        score = importance * proximity # attack!
 
-        print(f"hunt? h={health} d={distance} ld={length_delta} i={importance} p={proximity} s={score}")
+        print(f"hunt? h={health} d={distance} i={importance} p={proximity} s={score}")
         return score
+
+    def get_avoiding_score(self, distance):
+        distance = min(4, distance) # max 5 distance for formula
+  
+        proximity = (4 - distance) ** 0.5 / (4 ** 0.5)
+        # https://www.desmos.com/calculator/ho1ztpfcp0
+
+        # close (1) = 0 bad, far (4) = 1 good
+        score = 1 - proximity
+
+        print(f"avoid? d={distance} p={proximity} s={score}")
+        return score        
 
     # returns 1 if should go towards food, 0 if should ignore
     def get_food_score(self, health, distance, turn):
@@ -255,6 +295,7 @@ class SnakeBrain(object):
 
       return True
 
+    # todo: use matrix for performance and also tail spaces should be treated as open
     def is_open(self, position, snakes):
       for snake in snakes:
         for body_position in snake["body"]:
@@ -332,5 +373,6 @@ class SnakeBrain(object):
         f"s:{round(c['score'], 5)} " + \
         f"food: {round(c['food_score'], 5)} " + \
         f"hunting: {round(c['hunting_score'], 5)} " + \
+        f"avoiding: {round(c['avoiding_score'], 5)} " + \
         f"space: {round(c['space_score'], 5)} " + \
         f"hazard: {round(c['hazard_score'], 5)}"
