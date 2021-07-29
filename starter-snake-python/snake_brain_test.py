@@ -16,11 +16,14 @@ class SnakeBrainTest(unittest.TestCase):
         snake.save_coefficients()
 
     def test_why_right(self):
+        # move right to attack snake on left was more compelling
+        # than food (because of proximity of larger snake)
         with open('fixtures/why_right.json') as f:
             self.data = json.load(f)
         snake = SnakeBrain(self.data)
         snake.print_board(self.data)
         print(snake.get_move(self.data))
+        snake.matrix_by_move["right"].print(1)
 
     def test_get_hazard_score(self):
         self.data["board"]["snakes"][0]["health"] = 10

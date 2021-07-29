@@ -94,7 +94,7 @@ class SnakeBrain(object):
 
     def apply_filter_rules(self, data, choices):
         good_choices = []
-      
+
         for choice in choices:
           # bugbug: we might filter multiple bad choices here
           if len(data["board"]["snakes"]) > 1 and \
@@ -103,7 +103,7 @@ class SnakeBrain(object):
           good_choices.append(choice)
 
         # no good choices!
-        if len(good_choices) == 0: good_choices = choices 
+        if len(good_choices) == 0: good_choices = choices
         return good_choices
 
     # opposite of food score
@@ -166,6 +166,7 @@ class SnakeBrain(object):
       health = data["you"]["health"]
       size = data["board"]["width"]
 
+      # bug: don't score distance to shorter snake compared to longer snake
       for choice in choices:
         # opponent_possible_head_position
         choice["closest_ophp_distance"] = 9999999999
@@ -186,7 +187,7 @@ class SnakeBrain(object):
                 choice["closest_ophp_distance"] = distance
                 choice["closest_opponent_size"] = length
 
-      for choice in choices:        
+      for choice in choices:
         if choice["closest_ophp_distance"] >= 10:
           choice["hunting_score"] = 0
         else:
@@ -232,7 +233,7 @@ class SnakeBrain(object):
         importance = (100 - health) ** 4 / (100 ** 4)
 
         # close = 1, far = 0
-        proximity = 1 / distance # should 
+        proximity = 1 / distance # should
 
         print(f"eat? t={turn} h={health} d={distance} i={importance} p={proximity} s={round(importance*proximity, 5)}")
         return importance * proximity
