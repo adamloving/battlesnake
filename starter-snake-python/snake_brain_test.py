@@ -96,9 +96,9 @@ class SnakeBrainTest(unittest.TestCase):
     def test_avoid_scoring(self):
         snake = SnakeBrain(self.data)
         self.assertGreaterEqual(snake.get_avoiding_score(4),   0.9) # 4 away, okay to move there
-        self.assertGreaterEqual(snake.get_avoiding_score(4),   0.5) # 3 away neither here nor there
-        self.assertLessEqual(snake.get_avoiding_score(2),   0.40) # 2 away not so good
-        self.assertLessEqual(snake.get_avoiding_score(1), .2) # 1 away not good
+        self.assertGreaterEqual(snake.get_avoiding_score(3),   0.8) # 3 away neither here nor there
+        self.assertLessEqual(snake.get_avoiding_score(2),   0.70) # 2 away not so good
+        self.assertLessEqual(snake.get_avoiding_score(1), .4) # 1 away not good
         self.assertLessEqual(snake.get_avoiding_score(0), 0.1) # 0 away don't do it
 
     def test_food_scoring(self):

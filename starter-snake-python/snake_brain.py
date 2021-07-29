@@ -101,8 +101,7 @@ class SnakeBrain(object):
         for choice in choices:
           # bugbug: we might filter multiple bad choices here
           if len(data["board"]["snakes"]) > 1 and \
-              choice['closest_ophp_distance'] == 0 and \
-              choice['closest_opponent_size'] >= data["you"]["length"]: continue
+              choice['closest_ophp_distance'] == 0: continue
           good_choices.append(choice)
 
         # no good choices!
@@ -251,7 +250,7 @@ class SnakeBrain(object):
     def get_avoiding_score(self, distance):
         distance = min(4, distance) # max 5 distance for formula
   
-        proximity = (4 - distance) ** 0.5 / (4 ** 0.5)
+        proximity = (4 - distance) ** 1.5 / (4 ** 1.5)
         # https://www.desmos.com/calculator/ho1ztpfcp0
 
         # close (1) = 0 bad, far (4) = 1 good
