@@ -38,6 +38,7 @@ class Board(object):
         # mark where the snakes are
         for snake in self.board["snakes"]:
             for body_position in snake["body"]:
+                print(f"??? {snake}")
                 matrix[body_position["x"]][body_position["y"]] = f"S:{snake['id']}"
 
         return matrix
@@ -73,7 +74,7 @@ class Board(object):
                 next_position = self.get_next_position(snake["head"], move)
                 if not self.is_on_board(next_position): continue
                 if self.is_occupied(next_position): continue
-                
+
                 print(f"possible move: {snake['id']} {move} {next_position}")
                 pnps.append({
                     "id": snake["id"],
@@ -106,7 +107,7 @@ class Board(object):
                 current_snake = new_board.snakes_by_id[pnp["id"]]
                 occupant = new_board.matrix[p["x"]][p["y"]]
                 if pnp["id"] == new_board.you_id: new_board.you_move = pnp["move"]
-                
+
                 if occupant == " ":
                     #print(f"No occupant {p}")
                     new_board.move_snake(pnp["id"], p)
@@ -137,7 +138,7 @@ class Board(object):
                 else: # ignore food or hazard
                     # print(f"food or hazard at {p}")
                     new_board.move_snake(current_snake["id"], p)
-            
+
             # print(combo)
             # print('\x1bc')
             # new_board.print()
@@ -169,7 +170,7 @@ class Board(object):
 
         self.matrix[p["x"]][p["y"]] = marker
         self.matrix[tail["x"]][tail["y"]] = " "
-        
+
 
     # translate move into position (without bounds check)
     def get_next_position(self, current_position, direction):
@@ -202,6 +203,9 @@ class Board(object):
     def is_occupied(self, position):
         return self.matrix[position['x']][position['y']][0] == "S"
 
+    def is_open(self, position):
+        return self.matrix[position['x']][position['y']][0] != "S"
+
     def get_distance(self, p1, p2):
       dist_x = abs(p1["x"] - p2["x"])
       dist_y = abs(p1["y"] - p2["y"])
@@ -214,16 +218,16 @@ class Board(object):
         if total_alive == 0: return 0
 
         is_alive = self.you_id in self.snakes_by_id
-        
+
         if not is_alive: return 0 # lose!
-        
+
         others_penalty = (total_alive - 1) * .25
 
         hazard_penalty = 0
         me = self.snakes_by_id[self.you_id]
         if me["head"] in self.board["hazards"]:
             hazard_penalty = 0.5
-    
+
         if is_alive and total_alive == 1: return 1 # win!
 
         return max(0, 1 - others_penalty - hazard_penalty)
@@ -237,8 +241,8 @@ class Board(object):
         is_you_alive = False
         for snake in self.board["snakes"]:
             is_you_alive = snake["id"] == self.you_id
-            if is_you_alive: break 
-        
+            if is_you_alive: break
+
         if not is_you_alive: return 1 # we killed him
 
         return (total_alive - 1) * .25

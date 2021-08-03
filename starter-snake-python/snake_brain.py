@@ -1,6 +1,7 @@
 import json
 import random
 
+from board import Board
 from matrix import Matrix
 
 
@@ -17,6 +18,7 @@ class SnakeBrain(object):
     matrix_by_move = {}
 
     def __init__(self, data, coefficient_file_name="./files/current.json"):
+        self.board = Board(data["board"])
         self.load_coefficients(coefficient_file_name)
         return
 
@@ -35,24 +37,21 @@ class SnakeBrain(object):
             self.coefficients = json.load(f)
         return
 
-    # only save after win
+    # after winning, save the mutated coefficients
     def save_coefficients(self, name="./files/current.json"):
         with open(name, "w") as f:
             json.dump(self.coefficients, f)
         return
 
     def get_move(self, data):
-        size = data["board"]["width"]
         head_position = data["you"]["head"]
         directions = ["up", "down", "left", "right"]
         random.shuffle(directions)
         valid_choices = []
 
         for move in directions:
-            position = self.get_next_position(head_position, move)
-            if self.is_on_board(position, size) and self.is_open(
-                position, data["board"]["snakes"]
-            ):
+            position = self.board.get_next_position(head_position, move)
+            if self.board.is_on_board(position) and self.board.is_open(position):
                 valid_choices.append({"move": move, "position": position, "score": 1})
                 self.matrix_by_move[move] = Matrix(data["board"], position)
 
@@ -147,7 +146,7 @@ class SnakeBrain(object):
             choice["hazard_score"] = 1
             for hazard in data["board"]["hazards"]:
                 # don't use the matrix, because our body might be in it
-                distance = min(distance, self.get_distance(choice["position"], hazard))
+                distance = min(distance, self.board.get_distance(choice["position"], hazard))
                 # print(f"{choice['position']} {self.get_distance(choice['position'], hazard)} {hazard}")
 
             # calc based on nearest hazard
@@ -208,9 +207,9 @@ class SnakeBrain(object):
                     continue
                 prey_head_position = snake["head"]
                 for direction in ["up", "down", "left", "right"]:
-                    pphp = self.get_next_position(prey_head_position, direction)
-                    if self.is_on_board(pphp, size) and self.is_open(
-                        pphp, data["board"]["snakes"]
+                    pphp = self.board.get_next_position(prey_head_position, direction)
+                    if self.board.is_on_board(pphp) and self.board.is_open(
+                        pphp
                     ):
                         distance = self.matrix_by_move[choice["move"]].get_distance_to(
                             pphp
@@ -247,10 +246,10 @@ class SnakeBrain(object):
                     continue
                 opponent_head_position = snake["head"]
                 for direction in ["up", "down", "left", "right"]:
-                    ophp = self.get_next_position(opponent_head_position, direction)
-                    if self.is_on_board(ophp, size) and self.is_open(
-                        ophp, data["board"]["snakes"]
-                    ):
+                    ophp = self.board.get_next_position(
+                        opponent_head_position, direction
+                    )
+                    if self.board.is_on_board(ophp) and self.board.is_open(ophp):
                         distance = self.matrix_by_move[choice["move"]].get_distance_to(
                             ophp
                         )
@@ -320,87 +319,6 @@ class SnakeBrain(object):
         )
         return importance * proximity
 
-    def get_distance(self, p1, p2):
-        dist_x = abs(p1["x"] - p2["x"])
-        dist_y = abs(p1["y"] - p2["y"])
-        return dist_x + dist_y
-
-    def is_on_board(self, position, size):
-        if position["x"] < 0:
-            return False
-        if position["y"] < 0:
-            return False
-        if position["x"] > size - 1:
-            return False
-        if position["y"] > size - 1:
-            return False
-
-        return True
-
-    # todo: use matrix for performance and also tail spaces should be treated as open
-    def is_open(self, position, snakes):
-        for snake in snakes:
-            for body_position in snake["body"]:
-                if (
-                    body_position["x"] == position["x"]
-                    and body_position["y"] == position["y"]
-                ):
-                    return False
-
-        return True
-
-    def get_next_position(self, current_position, direction):
-        new_position = {"x": current_position["x"], "y": current_position["y"]}
-        if direction == "up":
-            new_position["y"] = new_position["y"] + 1
-        elif direction == "down":
-            new_position["y"] = new_position["y"] - 1
-        elif direction == "right":
-            new_position["x"] = new_position["x"] + 1
-        elif direction == "left":
-            new_position["x"] = new_position["x"] - 1
-
-        return new_position
-
-    def print_board(self, data):
-        size = data["board"]["width"]
-
-        # initialize a list of lists
-        matrix = [[" " for x in range(size)] for y in range(size)]
-
-        # This should mark the food in the board
-        # This passes the checker, but I don't know how to get print the board so I can see if it actually works
-        snake_number = "F"
-        for food in data["board"]["food"]:
-            for food_position in data["board"]["food"]:
-                matrix[food_position["x"]][food_position["y"]] = str(snake_number)
-
-        # This should mark the hazards in the board
-        # This passes the checker, but I don't know how to get print the board so I can see if it actually works
-        snake_number = "H"
-        for hazard in data["board"]["hazards"]:
-            for hazard_position in data["board"]["hazards"]:
-                matrix[hazard_position["x"]][hazard_position["y"]] = str(snake_number)
-
-        # mark where the snakes are
-        snake_number = 0
-        for snake in data["board"]["snakes"]:
-            for body_position in snake["body"]:
-                matrix[body_position["x"]][body_position["y"]] = str(snake_number)
-            snake_number += 1
-
-        # print it out
-        print("")
-        for y in reversed(range(size)):
-            print(" | ", end="")
-            for x in range(size):
-                print(f"{matrix[x][y]}", end="")
-                print(" | ", end="")
-            print("")
-        print("")
-
-        return matrix
-
     def score_choices_based_on_space(self, data, choices):
         for choice in choices:
             choice["space_score"] = self.matrix_by_move[choice["move"]].get_space_score(
@@ -408,9 +326,6 @@ class SnakeBrain(object):
             )
 
         return choices
-
-    def is_hazard(self, data, position):
-        return position in data["board"]["hazards"]
 
     def choice_to_string(self, c):
         return (
