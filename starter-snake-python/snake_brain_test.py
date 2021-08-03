@@ -28,7 +28,7 @@ class SnakeBrainTest(unittest.TestCase):
         with open('fixtures/start.json') as f:
             self.data = json.load(f)
         snake = SnakeBrain(self.data)
-        snake.print_board(self.data)
+        snake.board.print()
         print(snake.get_move(self.data))
         snake.matrix_by_move["right"].print(1)
 
