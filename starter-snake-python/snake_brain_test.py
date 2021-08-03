@@ -14,25 +14,6 @@ class SnakeBrainTest(unittest.TestCase):
         snake = SnakeBrain(self.data)
         snake.save_coefficients()
 
-    def test_why_right(self):
-        # move right to attack snake on left was more compelling
-        # than food (because of proximity of larger snake)
-        with open("fixtures/why_right.json") as f:
-            self.data = json.load(f)
-        snake = SnakeBrain(self.data)
-        snake.board.print()
-        print(snake.get_move(self.data))
-        # snake.matrix_by_move["right"].print(1)
-
-    def test_why_right2(self):
-        with open('fixtures/start.json') as f:
-            self.data = json.load(f)
-        snake = SnakeBrain(self.data)
-        snake.board.print()
-        print(snake.get_move(self.data))
-        snake.matrix_by_move["right"].print(1)
-
-
     def test_get_hazard_score(self):
         self.data["board"]["snakes"][0]["health"] = 10
         self.data["you"]["health"] = 10
@@ -60,7 +41,7 @@ class SnakeBrainTest(unittest.TestCase):
 
         snake = SnakeBrain(self.data)
         snake.board.print()
-        snake.get_move(self.data)
+        snake.get_move()
 
     def test_space_scoring(self):
         snake = SnakeBrain(self.data)
@@ -78,7 +59,7 @@ class SnakeBrainTest(unittest.TestCase):
         self.data["board"]["snakes"].append(opponent)
         snake.board.print()
 
-        snake.get_move(self.data)
+        snake.get_move()
 
         choices = snake.score_choices_based_on_space(
             self.data,
@@ -141,7 +122,7 @@ class SnakeBrainTest(unittest.TestCase):
     # does it at least do something?
     def test_move(self):
         snake = SnakeBrain(self.data)
-        move = snake.get_move(self.data)
+        move = snake.get_move()
         self.assertIn(move, ["left", "right", "up", "down"])
 
     # should stay on board no matter what size it is
@@ -159,7 +140,7 @@ class SnakeBrainTest(unittest.TestCase):
                     self.data["board"]["food"] = []
 
                     snake = SnakeBrain(self.data)
-                    move = snake.get_move(self.data)
+                    move = snake.get_move()
 
                     self.assertIn(move, ["left", "right", "up", "down"])
 
@@ -186,7 +167,7 @@ class SnakeBrainTest(unittest.TestCase):
         self.data["you"]["head"] = {"x": 1, "y": 1}
         self.data["board"]["snakes"][0] = self.data["you"]
         snake = SnakeBrain(self.data)
-        move = snake.get_move(self.data)
+        move = snake.get_move()
         self.assertEqual(move, "right")
 
     def test_avoids_direct_collision(self):
@@ -205,7 +186,7 @@ class SnakeBrainTest(unittest.TestCase):
         self.data["board"]["snakes"].append(opponent)
         snake = SnakeBrain(self.data)
         snake.board.print()
-        move = snake.get_move(self.data)
+        move = snake.get_move()
         self.assertEqual(move, "up")
 
     def test_avoids_potential_collision(self):
@@ -225,7 +206,7 @@ class SnakeBrainTest(unittest.TestCase):
 
         snake = SnakeBrain(self.data)
         snake.board.print()
-        move = snake.get_move(self.data)
+        move = snake.get_move()
         self.assertEqual(move, "up")
 
     def test_avoids_potential_collision_middle(self):
@@ -243,7 +224,7 @@ class SnakeBrainTest(unittest.TestCase):
         self.data["board"]["snakes"].append(opponent)
 
         snake = SnakeBrain(self.data)
-        move = snake.get_move(self.data)
+        move = snake.get_move()
         self.assertIn(move, ["left", "up", "down"])
 
     def test_prints_board(self):
@@ -262,30 +243,8 @@ class SnakeBrainTest(unittest.TestCase):
         snake = SnakeBrain(self.data)
         snake.board.print()
         self.data["you"]["health"] = 20
-        move = snake.get_move(self.data)
+        move = snake.get_move()
         self.assertEqual(move, "down")
-
-    def test_head_to_head_food(self):
-        # shorter snake should never attack larger
-        with open("fixtures/head_to_head_food.json") as f:
-            self.data = json.load(f)
-        snake = SnakeBrain(self.data)
-        snake.board.print()
-        move = snake.get_move(self.data)
-        # print(move)
-
-    # def test_hunts_short_snake(self):
-    #     snake = SnakeBrain(self.data)
-
-    #     # shorter snake right in front of me!
-    #     self.data["board"]["snakes"].append({
-    #         "id": "shorty",
-    #         "body": [{ "x": 4, "y": 10 }],
-    #         "head": { "x": 4, "y": 10 }
-    #     })
-    #     snake.board.print()
-    #     move = snake.get_move(self.data)
-    #     self.assertEqual(move, "right")
 
 
 if __name__ == "__main__":
