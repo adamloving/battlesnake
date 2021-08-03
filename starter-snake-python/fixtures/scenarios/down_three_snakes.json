@@ -13,51 +13,72 @@
         "width": 11,
         "snakes": [
             {
-                "id": "1",
-                "name": "Drake",
+                "id": "A",
+                "name": "A",
                 "latency": "221",
                 "health": 98,
                 "body": [
                     {
                         "x": 2,
-                        "y": 5
+                        "y": 10
                     },
                     {
                         "x": 1,
-                        "y": 5
+                        "y": 10
+                    },
+                    {
+                        "x": 1,
+                        "y": 9
                     }
                 ],
                 "head": {
                     "x": 2,
-                    "y": 5
+                    "y": 10
                 },
-                "length": 2,
+                "length": 3,
                 "shout": ""
-            },
-            {
+            }, {
                 "id": "2",
                 "name": "Number 2",
                 "latency": "221",
                 "health": 98,
                 "body": [
                     {
-                        "x": 4,
-                        "y": 5
+                        "x": 0,
+                        "y": 10
+                    },                    {
+                        "x": 0,
+                        "y": 9
+                    }
+
+                ],
+                "head": {
+                    "x": 0,
+                    "y": 10
+                },
+                "length": 2,
+                "shout": ""
+            },
+             {
+                "id": "3",
+                "name": "Number 3",
+                "latency": "221",
+                "health": 98,
+                "body": [
+                    {
+                        "x": 2,
+                        "y": 8
                     },
                     {
-                        "x": 5,
-                        "y": 5
-                    },
-                    {
-                        "x": 6,
-                        "y": 5
+                        "x": 2,
+                        "y": 7
                     }
                 ],
                 "head": {
-                    "x": 4,
-                    "y": 5
+                    "x": 2,
+                    "y": 8
                 },
-                "length": 3,
+                "length": 2,
                 "shout": ""
             }
         ],
@@ -74,25 +95,30 @@
         "hazards": []
     },
     "you": {
-        "id": "1",
+        "id": "gs_B8CSpxhpMGJbrYjkPHgF8PSS",
         "name": "Drake",
         "latency": "221",
         "health": 98,
         "body": [
             {
                 "x": 2,
-                "y": 5
+                "y": 10
             },
             {
                 "x": 1,
-                "y": 5
+                "y": 10
+            },
+            {
+                "x": 1,
+                "y": 9
             }
         ],
         "head": {
             "x": 2,
-            "y": 5
+            "y": 10
         },
-        "length": 2,
+        "length": 3,
         "shout": ""
+        
     }
 }

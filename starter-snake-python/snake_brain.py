@@ -1,8 +1,12 @@
 import json
 import random
+import logging
 
 from board import Board
 from matrix import Matrix
+
+DIRECTIONS = ["up", "down", "left", "right"]
+random.shuffle(DIRECTIONS)
 
 
 class SnakeBrain(object):
@@ -18,6 +22,7 @@ class SnakeBrain(object):
     matrix_by_move = {}
 
     def __init__(self, data, coefficient_file_name="./files/current.json"):
+        self.data = data
         self.board = Board(data["board"])
         self.load_coefficients(coefficient_file_name)
         return
@@ -43,26 +48,24 @@ class SnakeBrain(object):
             json.dump(self.coefficients, f)
         return
 
-    def get_move(self, data):
-        head_position = data["you"]["head"]
-        directions = ["up", "down", "left", "right"]
-        random.shuffle(directions)
+    def get_move(self):
+        head_position = self.data["you"]["head"]
         valid_choices = []
 
-        for move in directions:
+        for move in DIRECTIONS:
             position = self.board.get_next_position(head_position, move)
             if self.board.is_on_board(position) and self.board.is_open(position):
                 valid_choices.append({"move": move, "position": position, "score": 1})
-                self.matrix_by_move[move] = Matrix(data["board"], position)
+                self.matrix_by_move[move] = Matrix(self.data["board"], position)
 
-        print(f"Valid choices: {len(valid_choices)} {valid_choices}")
+        logging.debug(f"Valid choices: {len(valid_choices)} {valid_choices}")
 
         # (valid_choices and scored_choices are the same list)
-        self.score_choices_based_on_food(data, valid_choices)
-        self.score_choices_based_on_hunting(data, valid_choices)
-        self.score_choices_based_on_avoiding(data, valid_choices)
-        self.score_choices_based_on_space(data, valid_choices)
-        self.score_choices_based_on_hazards(data, valid_choices)
+        self.score_choices_based_on_food(self.data, valid_choices)
+        self.score_choices_based_on_hunting(self.data, valid_choices)
+        self.score_choices_based_on_avoiding(self.data, valid_choices)
+        self.score_choices_based_on_space(self.data, valid_choices)
+        self.score_choices_based_on_hazards(self.data, valid_choices)
 
         # average scores
         for choice in valid_choices:
@@ -79,7 +82,7 @@ class SnakeBrain(object):
                 / 5
             )
 
-        valid_choices = self.apply_filter_rules(data, valid_choices)
+        valid_choices = self.apply_filter_rules(self.data, valid_choices)
 
         # sort choices so best choice is first
         def by_score(choice):
@@ -88,18 +91,25 @@ class SnakeBrain(object):
         valid_choices.sort(key=by_score)
         valid_choices.reverse()
 
-        print(f"----- Turn {data['turn']} at {head_position} -----")
+        logging.debug(f"----- Turn {self.data['turn']} at {head_position} -----")
         for i, choice in enumerate(valid_choices):
-            print(f"{i}: {self.choice_to_string(choice)}")
-        print("-------------------------------")
+            logging.debug(f"{i}: {self.choice_to_string(choice)}")
+        logging.debug("-------------------------------")
 
-        # print(f"sorted choices: {scored_choices}")
+        # retain choices for logging
+        self.valid_choices = valid_choices
+
+        # logging.debug(f"sorted choices: {scored_choices}")
         if len(valid_choices) > 0:
             best_choice = valid_choices[0]
             return best_choice["move"]
         else:
-            print("No valid moves")
+            logging.debug("No valid moves")
             return None
+
+    def print_choices(self):
+        for i, choice in enumerate(self.valid_choices):
+            print(f"{i}: {self.choice_to_string(choice)}")
 
     def apply_filter_rules(self, data, choices):
         good_choices = []
@@ -134,7 +144,7 @@ class SnakeBrain(object):
         # https://www.desmos.com/calculator/yubw6ioyi8
 
         # bugbug: scale to 1 (normalize)
-        print(
+        logging.debug(
             f"hazard? h={health} d={distance} i={importance} p={proximity} s={1-(importance*proximity)}"
         )
         return 1 - (importance * proximity)
@@ -145,8 +155,10 @@ class SnakeBrain(object):
             choice["hazard_score"] = 1
             for hazard in data["board"]["hazards"]:
                 # don't use the matrix, because our body might be in it
-                distance = min(distance, self.board.get_distance(choice["position"], hazard))
-                # print(f"{choice['position']} {self.get_distance(choice['position'], hazard)} {hazard}")
+                distance = min(
+                    distance, self.board.get_distance(choice["position"], hazard)
+                )
+                # logging.debug(f"{choice['position']} {self.get_distance(choice['position'], hazard)} {hazard}")
 
             # calc based on nearest hazard
             choice["hazard_score"] = self.get_hazard_score(
@@ -155,7 +167,7 @@ class SnakeBrain(object):
 
             # HACK: in hazard, further from edge is better
             if choice["hazard_score"] == 0:
-                print("Hazard hack")
+                logging.debug("Hazard hack")
                 size = data["board"]["width"]
                 p = choice["position"]
                 # interior scores higher than edges
@@ -207,15 +219,13 @@ class SnakeBrain(object):
                 prey_head_position = snake["head"]
                 for direction in ["up", "down", "left", "right"]:
                     pphp = self.board.get_next_position(prey_head_position, direction)
-                    if self.board.is_on_board(pphp) and self.board.is_open(
-                        pphp
-                    ):
+                    if self.board.is_on_board(pphp) and self.board.is_open(pphp):
                         distance = self.matrix_by_move[choice["move"]].get_distance_to(
                             pphp
                         )
-                        # print(f"pphp: {pphp} {distance}")
+                        # logging.debug(f"pphp: {pphp} {distance}")
                         if distance < choice["closest_pphp_distance"]:
-                            # print(f"nearest prey: d={distance} l={snake['length']}")
+                            # logging.debug(f"nearest prey: d={distance} l={snake['length']}")
                             choice["closest_pphp_distance"] = distance
 
         for choice in choices:
@@ -225,7 +235,7 @@ class SnakeBrain(object):
                 choice["hunting_score"] = self.get_hunting_score(
                     health, choice["closest_pphp_distance"]
                 )
-            # print(f"get_hunting_score for {choice['position']} d={choice['closest_pphp_distance']} s={round(choice['hunting_score'], 5)}")
+            # logging.debug(f"get_hunting_score for {choice['position']} d={choice['closest_pphp_distance']} s={round(choice['hunting_score'], 5)}")
 
         return choices
 
@@ -252,9 +262,9 @@ class SnakeBrain(object):
                         distance = self.matrix_by_move[choice["move"]].get_distance_to(
                             ophp
                         )
-                        # if distanceprint(f"ophp: {ophp} {distance}")
+                        logging.debug(f"ophp: {ophp} {distance}")
                         if distance < choice["closest_ophp_distance"]:
-                            # print(f"nearest opponent: d={distance} l={snake['length']}")
+                            logging.debug(f"nearest opponent: d={distance} l={snake['length']}")
                             choice["closest_ophp_distance"] = distance
 
         for choice in choices:
@@ -264,7 +274,7 @@ class SnakeBrain(object):
                 choice["avoiding_score"] = self.get_avoiding_score(
                     choice["closest_ophp_distance"]
                 )
-            # print(f"get_avoiding_score for {choice['position']} d={choice['closest_ophp_distance']} s={round(choice['avoiding_score'], 5)}")
+            logging.debug(f"get_avoiding_score for {choice['position']} d={choice['closest_ophp_distance']} s={round(choice['avoiding_score'], 5)}")
 
         return choices
 
@@ -280,7 +290,7 @@ class SnakeBrain(object):
 
         score = importance * proximity  # attack!
 
-        print(f"hunt? h={health} d={distance} i={importance} p={proximity} s={score}")
+        logging.debug(f"hunt? h={health} d={distance} i={importance} p={proximity} s={score}")
         return score
 
     def get_avoiding_score(self, distance):
@@ -292,7 +302,7 @@ class SnakeBrain(object):
         # close (1) = 0 bad, far (4) = 1 good
         score = 1 - proximity
 
-        print(f"avoid? d={distance} p={proximity} s={score}")
+        logging.debug(f"avoid? d={distance} p={proximity} s={score}")
         return score
 
     # returns 1 if should go towards food, 0 if should ignore
@@ -313,7 +323,7 @@ class SnakeBrain(object):
         # close = 1, far = 0
         proximity = 1 / distance  # should
 
-        print(
+        logging.debug(
             f"eat? t={turn} h={health} d={distance} i={importance} p={proximity} s={round(importance*proximity, 5)}"
         )
         return importance * proximity

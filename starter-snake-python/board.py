@@ -1,5 +1,6 @@
 import copy
 import itertools
+import logging
 
 DIRECTIONS = directions = ["up", "down", "left", "right"]
 
@@ -38,7 +39,6 @@ class Board(object):
         # mark where the snakes are
         for snake in self.board["snakes"]:
             for body_position in snake["body"]:
-                print(f"??? {snake}")
                 matrix[body_position["x"]][body_position["y"]] = f"S:{snake['id']}"
 
         return matrix
@@ -66,7 +66,7 @@ class Board(object):
             is_me = snake["id"] == self.you_id
 
             if not is_me and self.get_distance(my_head, snake["head"]) >= 4:
-                print(f"ignore far away {snake['id']}")
+                logging.info(f"ignore far away {snake['id']}")
                 continue # ignore distant snakes
 
             pnps = [] # possible next positions
@@ -75,7 +75,7 @@ class Board(object):
                 if not self.is_on_board(next_position): continue
                 if self.is_occupied(next_position): continue
 
-                print(f"possible move: {snake['id']} {move} {next_position}")
+                logging.info(f"possible move: {snake['id']} {move} {next_position}")
                 pnps.append({
                     "id": snake["id"],
                     "move": move,
@@ -91,29 +91,29 @@ class Board(object):
     # generate possible next boards
     def generate(self):
         boards = []
-        #print("---- GENERATE ----")
+        #logging.info("---- GENERATE ----")
         combos = self.generate_pnp_combos()
-        print(f"Combos: {len(combos)}")
+        logging.info(f"Combos: {len(combos)}")
 
         # resolve conflicts
         for combo in combos:
-            #print("--- START combo ---")
+            #logging.info("--- START combo ---")
             new_board = Board(copy.deepcopy(self.board), self.you_id)
-            # new_board.print()
+            # new_board.logging.info()
             new_board.combo = combo
             for pnp in combo:
-                # print("pnp ---")
+                # logging.info("pnp ---")
                 p = pnp["position"]
                 current_snake = new_board.snakes_by_id[pnp["id"]]
                 occupant = new_board.matrix[p["x"]][p["y"]]
                 if pnp["id"] == new_board.you_id: new_board.you_move = pnp["move"]
 
                 if occupant == " ":
-                    #print(f"No occupant {p}")
+                    #logging.info(f"No occupant {p}")
                     new_board.move_snake(pnp["id"], p)
                     # new_board.debuglog.push(f"{pnp['id']} moved pnp['move']")
                 elif occupant[0] == "S":
-                    #print(f"Other snake {p} {occupant}")
+                    #logging.info(f"Other snake {p} {occupant}")
                     occupant_id = occupant[2:]
                     occupant_snake = new_board.snakes_by_id[occupant_id]
 
@@ -124,23 +124,23 @@ class Board(object):
                             new_board.kill_snake(occupant_snake["id"])
                             new_board.move_snake(current_snake["id"], p)
                         else:
-                            #print("same length")
+                            #logging.info("same length")
                             # bugbug should be a 50/50 case
                             new_board.kill_snake(current_snake["id"])
                     else:
-                        print(f"wtf {pnp} >{occupant}<")
-                        # new_board.print()
-                        #print(current_snake)
-                        #print(occupant_snake)
+                        logging.info(f"wtf {pnp} >{occupant}<")
+                        # new_board.logging.info()
+                        #logging.info(current_snake)
+                        #logging.info(occupant_snake)
                         # I ran into someone (this shouldn't happen)
                         new_board.kill_snake(current_snake["id"])
 
                 else: # ignore food or hazard
-                    # print(f"food or hazard at {p}")
+                    # logging.info(f"food or hazard at {p}")
                     new_board.move_snake(current_snake["id"], p)
 
-            # print(combo)
-            # print('\x1bc')
+            # logging.info(combo)
+            # logging.info('\x1bc')
             # new_board.print()
             boards.append(new_board)
 

@@ -1,4 +1,6 @@
-DIRECTIONS = directions = ["up", "down", "left", "right"]
+import logging
+
+DIRECTIONS = ["up", "down", "left", "right"]
 
 class Matrix(object):
 
@@ -151,5 +153,5 @@ class Matrix(object):
     def get_space_score(self, p):
         score = self.at(p)[2] / (self.size ** 2)
         score = max(min(1, score), 0)
-        print(f"space? {self.at(p)[2]} / {self.size ** 2} = {score}")
+        logging.debug(f"space? {self.at(p)[2]} / {self.size ** 2} = {score}")
         return score
