@@ -1,0 +1,127 @@
+{
+    "game": {
+        "id": "b9611d64-d7da-4713-ac6a-5fadaca7df7d",
+        "ruleset": {
+            "name": "solo",
+            "version": "v1.0.17"
+        },
+        "timeout": 500
+    },
+    "turn": 1,
+    "board": {
+        "height": 11,
+        "width": 11,
+        "snakes": [
+            {
+                "id": "D",
+                "name": "Drake",
+                "latency": "221",
+                "health": 100,
+                "body": [
+                    {
+                        "x": 9,
+                        "y":9
+                    }
+                ],
+                "head": {
+                    "x": 9,
+                    "y": 9
+                },
+                "length": 1,
+                "shout": ""
+            }, {
+                "id": "B",
+                "name": "B",
+                "latency": "221",
+                "health": 100,
+                "body": [
+                    {
+                        "x": 9,
+                        "y":9
+                    }
+                ],
+                "head": {
+                    "x": 9,
+                    "y": 5
+                },
+                "length": 1,
+                "shout": ""
+            }, {
+                "id": "C",
+                "name": "C",
+                "latency": "221",
+                "health": 100,
+                "body": [
+                    {
+                        "x": 1,
+                        "y":5
+                    }
+                ],
+                "head": {
+                    "x": 1,
+                    "y": 5
+                },
+                "length": 1,
+                "shout": ""
+            }, {
+                "id": "A",
+                "name": "A",
+                "latency": "221",
+                "health": 100,
+                "body": [
+                    {
+                        "x": 5,
+                        "y": 9
+                    }
+                ],
+                "head": {
+                    "x": 5,
+                    "y": 9
+                },
+                "length": 1,
+                "shout": ""
+            }
+        ],
+        "food": [
+            {
+                "x": 8,
+                "y": 10
+            },
+            {
+                "x": 6,
+                "y": 5
+            },
+            {
+                "x": 4,
+                "y": 8
+            },
+            {
+                "x": 2,
+                "y": 4
+            },
+            {
+                "x": 10,
+                "y": 4
+            }
+        ],
+        "hazards": []
+    },
+    "you": {
+        "id": "gs_B8CSpxhpMGJbrYjkPHgF8PSS",
+        "name": "Drake",
+        "latency": "221",
+        "health": 98,
+        "body": [
+            {
+                "x": 9,
+                "y":9
+            }
+        ],
+        "head": {
+            "x": 9,
+            "y": 9
+        },
+        "length": 1,
+        "shout": "}], "
+    }
+}

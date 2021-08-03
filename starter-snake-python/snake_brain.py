@@ -108,7 +108,6 @@ class SnakeBrain(object):
         if len(good_choices) == 0: good_choices = choices
         return good_choices
 
-    # opposite of food score
     def get_hazard_score(self, distance, health):
         if health == 0: return 0 # avoid divide by 0
         if distance == 0: return 0 # avoid divide by 0
@@ -118,7 +117,7 @@ class SnakeBrain(object):
         importance = max(min(1, importance), 0)
         # https://www.desmos.com/calculator/ho1ztpfcp0
 
-        # close (0) = 1, far (10) = 0
+        # close (0) = 1, 1 = .25, 2 = 0.5 far (10) = 0
         proximity = 1 / ((distance + 1) ** 2)
         # https://www.desmos.com/calculator/yubw6ioyi8
 
@@ -145,7 +144,7 @@ class SnakeBrain(object):
           p = choice["position"] 
           # interior scores higher than edges
           choice["hazard_score"] = 0.1 * min(p["x"], size - p["x"], p["y"], size - p["y"]) 
-          
+
     def score_choices_based_on_food(self, data, choices):
       # todo: what happens when no food on board?
       health = data["you"]["health"]

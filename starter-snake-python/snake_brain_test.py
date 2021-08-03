@@ -25,6 +25,15 @@ class SnakeBrainTest(unittest.TestCase):
         print(snake.get_move(self.data))
         # snake.matrix_by_move["right"].print(1)
 
+    def test_why_right2(self):
+        with open('fixtures/start.json') as f:
+            self.data = json.load(f)
+        snake = SnakeBrain(self.data)
+        snake.print_board(self.data)
+        print(snake.get_move(self.data))
+        snake.matrix_by_move["right"].print(1)
+
+
     def test_get_hazard_score(self):
         self.data["board"]["snakes"][0]["health"] = 10
         self.data["you"]["health"] = 10
