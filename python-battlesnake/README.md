@@ -1,4 +1,4 @@
-# A [Battlesnake](http://play.battlesnake.com) Written in Python
+# A [Battlesnake](http://play.battlesnake.com) written in Python
 
 This snake is derived from [starter-snake-python](https://github.com/BattlesnakeOfficial/starter-snake-python). Please see that readme for instructions on hosting your snake and competing.
 
@@ -15,7 +15,7 @@ and
 
 ## Running server locally
 
-Eventually you might want to run your Battlesnake server locally for faster testing and debugging. You can do this by installing [Python 3.8](https://www.python.org/downloads/) and running:
+Eventually you might want to run your Battlesnake server locally for faster testing and debugging. You can do this by installing [Python 3.8](https://www.python.org/downloads/) or above and running:
 
 ```shell
 python server.py
