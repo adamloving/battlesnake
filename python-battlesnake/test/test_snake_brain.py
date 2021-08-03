@@ -1,10 +1,13 @@
 import unittest
 import json
-import random
+import os, pathlib, sys
 
+file_path = pathlib.Path(__file__).parent.resolve()
+parent_path = os.path.join(file_path, "..")
+sys.path.insert(1, parent_path)
 from snake_brain import SnakeBrain
 
-# to run in console me use: python snake_brain_test.py
+# to run in console me use: python test/snake_brain_test.py
 class SnakeBrainTest(unittest.TestCase):
     def setUp(self):
         with open("fixtures/example_turn.json") as f:
@@ -19,7 +22,7 @@ class SnakeBrainTest(unittest.TestCase):
         self.data["you"]["health"] = 10
         self.data["board"]["hazards"].append({"x": 4, "y": 10})
         snake = SnakeBrain(self.data)
-        snake.board.print()
+        # snake.board.print()
 
         # far away, good health == 1
         self.assertAlmostEqual(snake.get_hazard_score(10, 100), 1, 1)
@@ -40,7 +43,7 @@ class SnakeBrainTest(unittest.TestCase):
             self.data["board"]["hazards"].append({"x": 0, "y": i})  # left
 
         snake = SnakeBrain(self.data)
-        snake.board.print()
+        # snake.board.print()
         snake.get_move()
 
     def test_space_scoring(self):
@@ -57,7 +60,7 @@ class SnakeBrainTest(unittest.TestCase):
             {"x": 6, "y": 10},
         ]
         self.data["board"]["snakes"].append(opponent)
-        snake.board.print()
+        # snake.board.print()
 
         snake.get_move()
 
@@ -68,7 +71,7 @@ class SnakeBrainTest(unittest.TestCase):
                 {"move": "down", "position": {"x": 2, "y": 9}},
             ],
         )
-        print(f"{choices}")
+        # print(f"{choices}")
 
     def test_hunt_scoring(self):
         snake = SnakeBrain(self.data)
@@ -102,7 +105,7 @@ class SnakeBrainTest(unittest.TestCase):
 
     def test_food_scoring(self):
         snake = SnakeBrain(self.data)
-        snake.board.print()
+        # snake.board.print()
 
         # If I'm healthy, food doesn't matter (score == 0)
         self.assertEqual(snake.get_food_score(100, 5, 100), 0)
@@ -185,7 +188,7 @@ class SnakeBrainTest(unittest.TestCase):
 
         self.data["board"]["snakes"].append(opponent)
         snake = SnakeBrain(self.data)
-        snake.board.print()
+        # snake.board.print()
         move = snake.get_move()
         self.assertEqual(move, "up")
 
@@ -205,7 +208,7 @@ class SnakeBrainTest(unittest.TestCase):
         self.data["board"]["snakes"].append(opponent)
 
         snake = SnakeBrain(self.data)
-        snake.board.print()
+        # snake.board.print()
         move = snake.get_move()
         self.assertEqual(move, "up")
 
@@ -237,11 +240,11 @@ class SnakeBrainTest(unittest.TestCase):
         )
         self.data["board"]["hazards"].append({"x": 3, "y": 3})
         snake = SnakeBrain(self.data)
-        snake.board.print()
+        # snake.board.print()
 
     def test_seeks_food(self):
         snake = SnakeBrain(self.data)
-        snake.board.print()
+        # snake.board.print()
         self.data["you"]["health"] = 20
         move = snake.get_move()
         self.assertEqual(move, "down")

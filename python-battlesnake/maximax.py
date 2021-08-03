@@ -2,6 +2,7 @@
 def by_average_desc(choice):
     return - choice[1]
 
+# a variation on minimax, for creating a search tree of future boards (not tested to be working)
 def maximax(board, depth):
     total_alive = len(board.board["snakes"])
     is_alive = board.you_id in board.snakes_by_id
@@ -10,10 +11,10 @@ def maximax(board, depth):
         you_score = board.score_for_current_player()
         other_score = board.score_for_others()
 
-        print(f"leaf d:{depth} you: {you_score} others: {other_score}")
+        # print(f"leaf d:{depth} you: {you_score} others: {other_score}")
         return [ None, you_score - other_score, {}]
 
-    print(f"--- depth {depth} ---")
+    # print(f"--- depth {depth} ---")
     dbm = {} # delta by move
     for board in board.generate():
         for pnp in board.combo:
@@ -35,7 +36,7 @@ def maximax(board, depth):
         dbm[move] = average
         choices.append([ move, average])
 
-    print(f"maximax choices {choices}")
+    # print(f"maximax choices {choices}")
 
     if len(choices) > 0:
         choices.sort(key=by_average_desc)

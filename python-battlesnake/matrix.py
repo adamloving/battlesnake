@@ -2,15 +2,16 @@ import logging
 
 DIRECTIONS = ["up", "down", "left", "right"]
 
+# This class creates a 3d array representing the board.
+# self.matrix[x][y][0] holds a string representation of the occupanants of that coordinate (for printing and occupancy testing)
+# self.matrix[x][y][1] holds the distance to that point from the point p passed to the constructor (accounting for going around obstacles)
+# self.matrix[x][y][2] holds a sort of flood fill distance of space accessible from point p
 class Matrix(object):
-
-    def __init__(self, board = {
-        "height": 11,
-        "width": 11,
-        "snakes": [],
-        "food": [],
-        "hazards": []
-    }, p = {"x": 0, "y": 0}):
+    def __init__(
+        self,
+        board={"height": 11, "width": 11, "snakes": [], "food": [], "hazards": []},
+        p={"x": 0, "y": 0},
+    ):
 
         self.board = board
         self.size = self.board["width"]
@@ -30,12 +31,12 @@ class Matrix(object):
         self.matrix = [[[None] * 3 for x in range(self.size)] for y in range(self.size)]
 
         for food in self.board["food"]:
-          for p in self.board["food"]:
-            self.at(p)[0] = "F"
+            for p in self.board["food"]:
+                self.at(p)[0] = "F"
 
         for hazard in self.board["hazards"]:
-          for p in self.board["hazards"]:
-            self.at(p)[0] = "H"
+            for p in self.board["hazards"]:
+                self.at(p)[0] = "H"
 
         # mark where the snakes are
         for snake in self.board["snakes"]:
@@ -47,8 +48,9 @@ class Matrix(object):
         self.count_flood_fill(self.p)
 
     # breadth first distance from p
-    def fill_distance_around(self, q, depth = 0):
-        if len(q) == 0: return
+    def fill_distance_around(self, q, depth=0):
+        if len(q) == 0:
+            return
         else:
             children = []
             for p in q:
@@ -56,7 +58,8 @@ class Matrix(object):
                 neighbors = self.get_unvisited_neighbors(p, 1)
                 # print(f"{depth} {p} {neighbors}")
                 for n in neighbors:
-                    if not n in children: children.append(n)
+                    if not n in children:
+                        children.append(n)
 
             self.fill_distance_around(children, depth + 1)
 
@@ -66,34 +69,38 @@ class Matrix(object):
     # bugbug: max depth not propagated down short branches
     # (or neighboring space may be part of separate short branches)
     def count_flood_fill(self, p):
-        if not self.is_on_board(p): return str({})
-        if self.at(p)[2] is not None: return str({})
-        if self.is_occupied(p): return str({})
+        if not self.is_on_board(p):
+            return str({})
+        if self.at(p)[2] is not None:
+            return str({})
+        if self.is_occupied(p):
+            return str({})
 
-        spaces = {str(p)} # string is hashable
+        spaces = {str(p)}  # string is hashable
         self.at(p)[2] = 1
-        spaces = spaces.union(self.count_flood_fill({"x": p["x"] - 1, "y": p["y"] }))
-        spaces = spaces.union(self.count_flood_fill({"x": p["x"] + 1, "y": p["y"] }))
+        spaces = spaces.union(self.count_flood_fill({"x": p["x"] - 1, "y": p["y"]}))
+        spaces = spaces.union(self.count_flood_fill({"x": p["x"] + 1, "y": p["y"]}))
         spaces = spaces.union(self.count_flood_fill({"x": p["x"], "y": p["y"] - 1}))
         spaces = spaces.union(self.count_flood_fill({"x": p["x"], "y": p["y"] + 1}))
 
         self.at(p)[2] = len(spaces)
         return spaces
 
-    def get_unvisited_neighbors(self, p, dimension = 1):
+    def get_unvisited_neighbors(self, p, dimension=1):
         open_neighbors = []
         for move in DIRECTIONS:
             n = self.get_next_position(p, move)
-            if not self.is_on_board(n): continue
-            if self.is_occupied(n): continue
-            if self.at(n)[dimension] is not None: continue
+            if not self.is_on_board(n):
+                continue
+            if self.is_occupied(n):
+                continue
+            if self.at(n)[dimension] is not None:
+                continue
             open_neighbors.append(n)
         return open_neighbors
 
     def get_next_position(self, current_position, direction):
-        new_position = {
-          "x": current_position["x"], "y": current_position["y"]
-        }
+        new_position = {"x": current_position["x"], "y": current_position["y"]}
         if direction == "up":
             new_position["y"] = new_position["y"] + 1
         elif direction == "down":
@@ -106,33 +113,33 @@ class Matrix(object):
         return new_position
 
     def is_on_board(self, position):
-      if position["x"] < 0:
-        return False
-      if position["y"] < 0:
-        return False
-      if position["x"] > self.size - 1:
-        return False
-      if position["y"] > self.size - 1:
-        return False
+        if position["x"] < 0:
+            return False
+        if position["y"] < 0:
+            return False
+        if position["x"] > self.size - 1:
+            return False
+        if position["y"] > self.size - 1:
+            return False
 
-      return True
+        return True
 
     def is_occupied(self, p):
         marker = self.at(p)[0]
         return marker is not None and marker[0] == "S"
 
-    def print(self, dimension = 0):
+    def print(self, dimension=0):
         size = len(self.matrix)
         print("")
         for y in reversed(range(size)):
-            print(" | ", end='')
+            print(" | ", end="")
             for x in range(size):
                 id = self.matrix[x][y][dimension]
                 id = " " if id is None else str(id)
                 if id[0:2] == "S:":
                     id = id[2:3]
-                print("{:<3}".format(id), end='')
-                print(" | ", end='')
+                print("{:<3}".format(id), end="")
+                print(" | ", end="")
             print("")
         print("")
 
@@ -144,7 +151,8 @@ class Matrix(object):
             dist = 9999
             for move in DIRECTIONS:
                 n = self.get_next_position(p, move)
-                if not self.is_on_board(n): continue
+                if not self.is_on_board(n):
+                    continue
                 dist = min(dist, self.at(n)[1] or 9999)
             dist = dist + 1
 

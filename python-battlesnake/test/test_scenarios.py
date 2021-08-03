@@ -1,18 +1,20 @@
 import argparse
 import logging
-import unittest
 import json
-import random
-import os
+import os, pathlib, sys
+
+file_path = pathlib.Path(__file__).parent.resolve()
+parent_path = os.path.join(file_path, "..")
+sys.path.insert(1, parent_path)
+from snake_brain import SnakeBrain
 
 DIRECTIONS = ["up", "down", "left", "right"]
 
-from snake_brain import SnakeBrain
 
-# to run in console use: python scenario_test.py
-# to run one sceenario with debugging: python scenario_test.py --test=right_when_shortest --log=debug
+# to run in console use: python test_scenarios.py
+# to run one scenario with debugging: python test_scenarios.py --test=right_when_shortest --log=debug
 def test_scenarios(selected_test_name="all"):
-    path = os.path.join(os.getcwd(), "fixtures/scenarios")
+    path = os.path.join(parent_path, "fixtures/scenarios")
     for file_name in os.listdir(path):
         test_name = file_name.split(".")[0]
         if selected_test_name != "all" and test_name != selected_test_name:
@@ -44,7 +46,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--test",
-        default="",
+        default="all",
         help="Run one test. Example --test right_when_shortest, default=all",
     )
     parser.add_argument(

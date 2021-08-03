@@ -1,5 +1,5 @@
 
-
+# this is not tested to be working yet
 def minimax(board, depth, is_you = True):
     best = None
     total_alive = len(board.board["snakes"])
@@ -25,7 +25,7 @@ def minimax(board, depth, is_you = True):
                 best = child.you_move
                 value = child_value
 
-        print(f"{depth} Best for me: {best} {value}")
+        # print(f"{depth} Best for me: {best} {value}")
         return [best, value]
 
     else: 
@@ -36,5 +36,5 @@ def minimax(board, depth, is_you = True):
                 best = child.you_move
                 value = child_value
         
-        print(f"{depth} Best for them: me:{best} {value}")
+        # print(f"{depth} Best for them: me:{best} {value}")
         return [best, value]
